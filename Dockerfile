@@ -9,7 +9,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1 — build
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 
 WORKDIR /app
 
@@ -27,7 +27,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 # ---------------------------------------------------------------------------
 # Stage 2 — runtime
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 
 # dumb-init reaps zombies and forwards SIGTERM, so graceful shutdown works when
 # the container is PID 1.
