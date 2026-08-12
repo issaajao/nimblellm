@@ -41,11 +41,14 @@ jobs:
       - name: Types
         run: npm run typecheck
 
-      - name: Tests
-        run: npm run test:coverage
-
+      # Must precede the tests: the examples suite runs each example as a real
+      # process, and they import the package by name, which resolves through
+      # the exports map to dist/. On a clean checkout there is no dist/ yet.
       - name: Build
         run: npm run build
+
+      - name: Tests
+        run: npm run test:coverage
 
       - name: Package contents
         # Catches a `files` field that would ship the wrong thing, before a

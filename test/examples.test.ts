@@ -9,6 +9,7 @@
 import { spawn } from 'node:child_process';
 import { createServer, type Server } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { startServer, type StartedServer } from '../src/server/server.js';
@@ -25,6 +26,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
  */
 const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
 const stripsTypes = major > 22 || (major === 22 && minor >= 18);
+
+/**
+ * Examples import the package by name, which resolves through the exports map
+ * to `dist/`. Without a build they fail with ten identical ERR_MODULE_NOT_FOUND
+ * traces that say nothing about the cause, so check once and say it plainly.
+ */
+const built = existsSync(join(ROOT, 'dist', 'index.js'));
 
 /** One server that answers in whichever dialect the path implies. */
 function stubProvider(): Server {
@@ -204,6 +212,14 @@ function run(
 }
 
 describe.skipIf(!stripsTypes)('examples', () => {
+  beforeAll(() => {
+    if (!built) {
+      throw new Error(
+        'dist/ is missing — the examples run against the built package. Run `npm run build` first.',
+      );
+    }
+  });
+
   it('01 completes and reports usage', async () => {
     const { code, stdout, stderr } = await run('01-basic-completion.ts');
     expect(stderr).toBe('');
