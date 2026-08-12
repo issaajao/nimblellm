@@ -15,9 +15,7 @@ provider supports, and the mistakes that cost the most time.
 
 - [OpenAI](./providers/openai.md)
 - [Azure OpenAI](./providers/azure.md)
-- [AWS Bedrock](./providers/bedrock.md) — SigV4 signing is verified against a
-  live endpoint; the streaming frame decoder is not yet
-  ([§6](../KNOWN_LIMITATIONS.md#6-streaming-caveats))
+- [AWS Bedrock](./providers/bedrock.md)
 - [Google Vertex AI](./providers/vertex.md)
 
 ## Guides
@@ -30,7 +28,8 @@ provider supports, and the mistakes that cost the most time.
 ## Reference
 
 - [API reference](./api-reference.md) — types, client, router, adapters.
-- [Known limitations](../KNOWN_LIMITATIONS.md) — what is not yet verified.
+- [Known limitations](../KNOWN_LIMITATIONS.md) — deliberate limitations, and
+  [what has been checked against real providers](../KNOWN_LIMITATIONS.md#verification-status).
 
 ## How it fits together
 

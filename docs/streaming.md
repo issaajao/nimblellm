@@ -116,6 +116,6 @@ Client code: [example 09](../examples/09-gateway-client.ts).
 | Bedrock  | binary event stream | `converse-stream`; frames decoded internally, CRCs not verified |
 | Vertex   | SSE                 | `?alt=sse` is added, or the endpoint returns a JSON array       |
 
-Bedrock's frame decoder is tested against frames built from the documented
-layout, not against bytes AWS actually sent — see
-[KNOWN_LIMITATIONS §6](../KNOWN_LIMITATIONS.md#6-streaming-caveats).
+For what has and has not been checked against a real provider — Bedrock's frame
+decoder in particular — see
+[Known limitations](../KNOWN_LIMITATIONS.md#verification-status).

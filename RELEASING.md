@@ -35,13 +35,16 @@ not one.
 
 Not mechanically enforced, but worth doing:
 
+- **Clear whatever is still open** in
+  [Verification status](./KNOWN_LIMITATIONS.md#verification-status). That table
+  is the single source of truth for what has been checked against real
+  providers; read it rather than relying on this list, which cannot be kept in
+  step with it.
 - **Run `npm run verify:live`** with credentials for as many providers as you
   have. It is the only check that contacts a real provider. Record the outcome
   in `KNOWN_LIMITATIONS.md` — that file's value comes from being kept accurate.
-  Currently outstanding: Bedrock's binary event-stream decoder has never seen
-  real AWS bytes (§6), because live runs were blocked at model entitlement.
-- **Build and run the container.** The image has never been built in this
-  repository's history (§7); the Dockerfile is validated only by its parts.
+- **Build and run the container**, if the table still shows it unbuilt. The
+  Dockerfile is otherwise validated only by its parts.
 - **Decide on the published image.** README and `deploy/kubernetes.yaml` refer
   to `ghcr.io/nimblellm/nimblellm`, which does not exist yet. Either publish it
   or change the references before anyone tries to pull it.

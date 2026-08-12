@@ -12,7 +12,27 @@ against a live AWS endpoint.
 
 ---
 
-## 1. AWS Bedrock SigV4 — verified against live AWS
+## Verification status
+
+**This section is the single source of truth for what has been checked against
+real providers.** Everything else in the repository — the README, the docs, the
+verification script's own output — links here rather than restating it, so there
+is exactly one place to update when this changes.
+
+| Area                           | Checked against a real provider?                                                                                     |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Bedrock SigV4 signing          | ✅ Yes — found and fixed a real defect ([§1](#1-aws-bedrock-sigv4-signing))                                          |
+| Bedrock event-stream decoding  | ❌ Not yet — has never decoded real AWS bytes ([§6](#6-streaming-caveats))                                           |
+| Response parsing, any provider | ❌ Not yet — no live response body has been parsed ([§2](#2-no-provider-has-been-exercised-against-a-live-endpoint)) |
+| Container image                | ❌ Never built ([§7](#7-operational-gaps))                                                                           |
+| Everything else                | Tested against mocked transports and local stub servers                                                              |
+
+Re-check any of it with `npm run verify:live`, which contacts real providers and
+is manual by design. Record what you find here.
+
+---
+
+## 1. AWS Bedrock SigV4 signing
 
 **Status: verified. Signing is confirmed working against a real AWS endpoint.**
 

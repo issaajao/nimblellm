@@ -8,9 +8,10 @@
 > works as a library and as a containerized gateway, is fully documented, and has
 > CI. See [Roadmap](#roadmap).
 >
-> **Before production use, read [KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md).**
-> In particular, AWS Bedrock's SigV4 signing has not yet been verified against a
-> live AWS endpoint. The API may change before 1.0.
+> **Before production use, read
+> [KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md#verification-status)** — it
+> records what has and has not been checked against real providers, and is kept
+> current. The API may change before 1.0.
 
 ---
 
@@ -61,7 +62,7 @@ normalizes requests and responses and gets out of the way.
 | [Gateway](./docs/gateway.md)                                                             | Running the container                                                                                                                                     |
 | [API reference](./docs/api-reference.md)                                                 | Types and exports                                                                                                                                         |
 | [Examples](./examples)                                                                   | Nine runnable programs, all executed by the test suite                                                                                                    |
-| [Known limitations](./KNOWN_LIMITATIONS.md)                                              | What is not yet verified                                                                                                                                  |
+| [Known limitations](./KNOWN_LIMITATIONS.md)                                              | Deliberate limitations, and what has been checked against real providers                                                                                  |
 
 ---
 
@@ -552,7 +553,7 @@ examples/             Nine runnable programs
 Dockerfile            Multi-stage build; non-root runtime
 docker-compose.yml
 deploy/kubernetes.yaml
-KNOWN_LIMITATIONS.md  What is not yet verified — read before production use
+KNOWN_LIMITATIONS.md  Deliberate limitations + verification status
 ```
 
 ---
@@ -586,7 +587,8 @@ credential routing is deliberately out of scope.
 
 ## Known limitations
 
-[KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md) lists what is not yet verified,
+[KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md) is the single source of truth for
+[what has been checked against real providers](./KNOWN_LIMITATIONS.md#verification-status),
 where provider behaviour was modelled conservatively, and which operational
 pieces are missing. Worth reading before you depend on this.
 

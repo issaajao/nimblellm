@@ -4,18 +4,11 @@ Uses the [Converse API](https://docs.aws.amazon.com/bedrock/latest/APIReference/
 which is model-agnostic — one adapter covers Anthropic, Meta, Mistral and Amazon
 models alike.
 
-> **Signing is verified.** Bedrock is the one provider whose authentication this
-> codebase _computes_ rather than copies — AWS Signature Version 4. Live
-> verification found a real defect there (single-encoded canonical URIs where
-> SigV4 requires double encoding), and the fix is confirmed accepted by a live
-> AWS endpoint.
->
-> One residual gap: the **binary event-stream decoder** used for streaming has
-> never seen bytes AWS actually sent, because live runs were blocked at model
-> entitlement before a response body was returned. Low risk — it is pure byte
-> parsing, and `npm run verify:live` fails its `stream` leg loudly if frames
-> decode to nothing — but open. See
-> [KNOWN_LIMITATIONS §6](../../KNOWN_LIMITATIONS.md#6-streaming-caveats).
+> **Bedrock is the one provider whose authentication this codebase _computes_
+> rather than copies** — AWS Signature Version 4, rather than a token dropped
+> into a header. For what that means in practice, and for what has and has not
+> been checked against a live AWS endpoint, see
+> [Known limitations](../../KNOWN_LIMITATIONS.md#verification-status).
 
 ## Setup
 
@@ -90,7 +83,8 @@ while `us.anthropic.claude-opus-5` works.
 
 An id containing a colon is URL-encoded into the path, so seeing `:` become
 `%3A` in logs is expected. (The SigV4 canonical request encodes it a second
-time, to `%253A` — see [KNOWN_LIMITATIONS §1](../../KNOWN_LIMITATIONS.md).)
+time, to `%253A` — see
+[Known limitations](../../KNOWN_LIMITATIONS.md#verification-status).)
 
 ### Sampling parameters on current models
 

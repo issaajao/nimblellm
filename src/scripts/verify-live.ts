@@ -298,8 +298,9 @@ function summarize(checks: readonly Check[], secrets: readonly Secret[]): void {
         );
       }
       console.log(
-        `\n${DIM}Record this in KNOWN_LIMITATIONS.md — date, region, model — and remove the\n` +
-          `unverified warnings from §1, §6, README.md and docs/providers/bedrock.md.${RESET}`,
+        `\n${DIM}Record this in KNOWN_LIMITATIONS.md — date, region, model — and update its\n` +
+          `"Verification status" section, which is where the rest of the repository reads\n` +
+          `this from.${RESET}`,
       );
     }
     return;
