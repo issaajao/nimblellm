@@ -1,0 +1,57 @@
+name: Provider support
+description: Report a provider behaviour that is modelled wrongly, or propose a new provider
+labels: [provider]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provider behaviour here is modelled from published API documentation and
+        verified against mocked transports — see
+        [KNOWN_LIMITATIONS §3](../blob/main/KNOWN_LIMITATIONS.md). Where the docs
+        were ambiguous, the conservative choice was made deliberately, so a
+        capability declared unsupported may be an under-claim rather than a bug.
+        Either way it is worth reporting.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of report
+      options:
+        - A capability is declared unsupported but actually works
+        - A capability is declared supported but fails
+        - A request or response is mapped incorrectly
+        - A parameter range or limit is wrong
+        - Propose a new provider
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      options:
+        - OpenAI
+        - Azure OpenAI
+        - AWS Bedrock
+        - Google Vertex AI
+        - A new provider
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: >
+        A link to the provider's documentation, or a real request/response pair
+        with credentials removed. This is the most valuable part of the report —
+        it is what lets a maintainer change the model with confidence rather
+        than swapping one guess for another.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should change
+      description: The mapping, capability flag, or limit you think is wrong, and what it should be.

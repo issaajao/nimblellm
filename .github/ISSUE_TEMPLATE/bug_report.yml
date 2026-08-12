@@ -1,0 +1,107 @@
+name: Bug report
+description: Something behaves differently than documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report.
+
+        **Never paste API keys, tokens, or `.env` contents here.** The
+        `NimbleError` output is scrubbed of configured credentials by design, so
+        it is safe to include — raw provider responses may not be, so read
+        before pasting.
+
+        For a security vulnerability, use [SECURITY.md](../blob/main/SECURITY.md)
+        instead of a public issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: >
+        The smallest request that shows it. A `normalizeRequest` or
+        `router.route` call is ideal — neither touches the network, so it
+        reproduces without credentials.
+      render: ts
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: The error
+      description: >
+        `error.toJSON()` if you have a `NimbleError` — it carries `code`,
+        `provider`, `status`, `retryable` and per-field `issues`, which is
+        usually enough to diagnose on its own.
+      render: json
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      options:
+        - OpenAI
+        - Azure OpenAI
+        - AWS Bedrock
+        - Google Vertex AI
+        - Not provider-specific
+        - An OpenAI-compatible server (vLLM, Ollama, …)
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model reference
+      description: As passed to `model` — e.g. `bedrock/us.anthropic.claude-opus-5`.
+
+  - type: input
+    id: version
+    attributes:
+      label: NimbleLLM version
+      placeholder: '0.1.0'
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      description: '`node --version`'
+      placeholder: 'v22.14.0'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: How are you using it
+      options:
+        - As a library
+        - As the HTTP gateway (container)
+        - Both
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: >
+            I checked
+            [KNOWN_LIMITATIONS.md](../blob/main/KNOWN_LIMITATIONS.md) — some
+            behaviour is a documented, deliberate limitation.
+          required: true
+        - label: This report contains no credentials.
+          required: true

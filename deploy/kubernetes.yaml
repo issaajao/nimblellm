@@ -1,0 +1,157 @@
+# NimbleLLM on Kubernetes.
+#
+# A starting point, not a drop-in: replace the image reference, the namespace,
+# and every credential below. Apply with:
+#
+#   kubectl apply -f deploy/kubernetes.yaml
+#
+# The Secret here is a template with placeholder values. In a real cluster,
+# prefer an external secret manager (External Secrets Operator, Vault Agent,
+# SOPS) over committing this file with values filled in.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nimblellm-credentials
+  labels:
+    app.kubernetes.io/name: nimblellm
+type: Opaque
+stringData:
+  # Gateway keys — callers present one as `Authorization: Bearer <key>`.
+  # Comma-separated to allow rotation: add the new key, migrate, drop the old.
+  NIMBLE_SERVER_API_KEYS: 'replace-me'
+
+  # Provider credentials. Delete the blocks you do not use.
+  OPENAI_API_KEY: 'sk-replace-me'
+  # AZURE_OPENAI_ENDPOINT: 'https://my-resource.openai.azure.com'
+  # AZURE_OPENAI_API_KEY: 'replace-me'
+  # AWS_REGION: 'us-east-1'
+  # AWS_ACCESS_KEY_ID: 'replace-me'
+  # AWS_SECRET_ACCESS_KEY: 'replace-me'
+  # GOOGLE_CLOUD_PROJECT: 'my-project'
+  # GOOGLE_SERVICE_ACCOUNT_JSON: '{"type":"service_account",...}'
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nimblellm-config
+  labels:
+    app.kubernetes.io/name: nimblellm
+data:
+  NIMBLE_PORT: '8080'
+  NIMBLE_LOG_LEVEL: 'info'
+  NIMBLE_TIMEOUT_MS: '120000'
+  NIMBLE_MAX_RETRIES: '2'
+  # Must exceed terminationGracePeriodSeconds below, or in-flight completions
+  # are cut off mid-token during a rollout.
+  NIMBLE_SHUTDOWN_GRACE_MS: '25000'
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nimblellm
+  labels:
+    app.kubernetes.io/name: nimblellm
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nimblellm
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nimblellm
+    spec:
+      # Long-running completions need time to drain; must exceed the longest
+      # request the gateway will accept.
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nimblellm
+          image: ghcr.io/nimblellm/nimblellm:0.1.0 # pin a digest in production
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: nimblellm-config
+            - secretRef:
+                name: nimblellm-credentials
+          # Liveness only asks whether the process is up. Readiness additionally
+          # requires at least one configured provider, so a misconfigured pod is
+          # kept out of the Service rather than restarted in a loop.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nimblellm
+  labels:
+    app.kubernetes.io/name: nimblellm
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: nimblellm
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+
+---
+# Optional: cap concurrent load per pod. Remove if you scale on other signals.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nimblellm
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nimblellm
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

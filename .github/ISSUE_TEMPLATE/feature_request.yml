@@ -1,0 +1,50 @@
+name: Feature request
+description: Suggest a capability or change
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        NimbleLLM normalizes requests and responses across providers and gets
+        out of the way. It is deliberately **not** a prompt framework, an agent
+        runtime, or a vector store — proposals in those directions are likely to
+        be declined however good the idea, so it is worth saying up front how
+        yours relates to normalization.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that is hard or impossible today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would the API look like? A sketch is fine.
+      render: ts
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried
+      description: >
+        `providerOptions` is the escape hatch for anything provider-specific
+        that is not modelled canonically — does it cover this? If not, say why.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which layer
+      options:
+        - Request normalization
+        - Routing / capabilities
+        - A provider adapter
+        - Credentials or configuration
+        - The HTTP gateway
+        - Documentation
+        - Not sure
+    validations:
+      required: true

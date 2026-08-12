@@ -1,0 +1,23 @@
+# Build outputs and dependencies are produced inside the image.
+node_modules
+dist
+coverage
+*.tsbuildinfo
+
+# Never let real credentials into a layer.
+.env
+.env.*
+!.env.example
+
+# Not needed at build time.
+.git
+.github
+.vscode
+.idea
+test
+deploy
+docs
+*.md
+!README.md
+.DS_Store
+*.log

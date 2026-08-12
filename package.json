@@ -1,0 +1,74 @@
+{
+  "name": "nimblellm",
+  "version": "0.1.0",
+  "description": "One request shape for OpenAI, AWS Bedrock, Azure OpenAI and Google Vertex AI.",
+  "license": "MIT",
+  "author": "NimbleLLM contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nimblellm/nimblellm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nimblellm/nimblellm/issues"
+  },
+  "homepage": "https://github.com/nimblellm/nimblellm#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "nimblellm": "./dist/bin/nimblellm.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "KNOWN_LIMITATIONS.md"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/bin/nimblellm.js",
+    "dev": "npm run build && node dist/bin/nimblellm.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "verify:live": "npm run build && node dist/scripts/verify-live.js",
+    "docker:build": "docker build -t nimblellm:local .",
+    "docker:run": "docker run --rm -p 8080:8080 --env-file .env nimblellm:local",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepublishOnly": "npm run clean && npm run build",
+    "ci": "npm run format:check && npm run typecheck && npm run test:coverage && npm run build"
+  },
+  "keywords": [
+    "llm",
+    "openai",
+    "bedrock",
+    "azure-openai",
+    "vertex-ai",
+    "gateway",
+    "proxy",
+    "normalization"
+  ],
+  "dependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10"
+  }
+}
