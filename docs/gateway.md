@@ -24,9 +24,9 @@ From source:
 NIMBLE_SERVER_API_KEYS=dev-key OPENAI_API_KEY=sk-... npm run dev
 ```
 
-> The image has not been published. `ghcr.io/nimblellm/nimblellm` is what
-> publishing will produce, not something you can pull today —
-> [KNOWN_LIMITATIONS §7](../KNOWN_LIMITATIONS.md#7-operational-gaps).
+> Published images live at `ghcr.io/issaajao/nimblellm`. For whether one is
+> available yet, see
+> [Verification status](../KNOWN_LIMITATIONS.md#verification-status).
 
 ## Endpoints
 

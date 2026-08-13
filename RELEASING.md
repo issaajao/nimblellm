@@ -45,9 +45,11 @@ Not mechanically enforced, but worth doing:
   in `KNOWN_LIMITATIONS.md` — that file's value comes from being kept accurate.
 - **Build and run the container**, if the table still shows it unbuilt. The
   Dockerfile is otherwise validated only by its parts.
-- **Decide on the published image.** README and `deploy/kubernetes.yaml` refer
-  to `ghcr.io/nimblellm/nimblellm`, which does not exist yet. Either publish it
-  or change the references before anyone tries to pull it.
+- **Publish the container image.** Actions → Publish image → Run workflow.
+  Leave `dry_run: true` first: it builds and smoke-tests without pushing.
+  Re-run with `dry_run: false` to push multi-arch images and a provenance
+  attestation to `ghcr.io/issaajao/nimblellm`. A published GitHub release
+  triggers the same workflow automatically.
 
 ## Versioning
 

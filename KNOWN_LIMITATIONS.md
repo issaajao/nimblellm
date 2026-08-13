@@ -199,7 +199,7 @@ tenant is the supported multi-tenant story.
   sensitive data. `NIMBLE_LOG_LEVEL=debug` raises verbosity but still never
   logs bodies.
 - **The container image is unsigned and unpublished.** No image exists at
-  `ghcr.io/nimblellm/nimblellm` yet; the references in the README and
+  `ghcr.io/issaajao/nimblellm` yet; the references in the README and
   Kubernetes manifest are what publishing will produce, not something you can
   pull today.
 

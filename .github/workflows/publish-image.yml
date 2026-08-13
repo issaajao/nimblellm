@@ -1,0 +1,107 @@
+name: Publish image
+
+# Manual, or on a published release. Publishing is a decision.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag to publish (e.g. 0.1.0). "latest" is added automatically.'
+        required: true
+        type: string
+      dry_run:
+        description: 'Build and smoke-test without pushing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+env:
+  # Derived from the repository, so a rename cannot leave this pointing at a
+  # namespace that no longer exists — which is exactly how the previous
+  # placeholder went stale.
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ghcr.io
+        if: ${{ github.event_name == 'release' || inputs.dry_run == false }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ inputs.tag || github.ref_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag || github.ref_name }}
+            type=raw,value=latest
+            type=sha,format=long
+
+      # Build for the host arch only and load it, so the smoke test below runs
+      # against the exact image before anything is pushed.
+      - name: Build (amd64, for the smoke test)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: nimblellm:smoke
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke-test the image
+        run: ./scripts/smoke-test-image.sh nimblellm:smoke
+
+      - name: Build and push (multi-arch)
+        if: ${{ github.event_name == 'release' || inputs.dry_run == false }}
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Attest provenance
+        if: ${{ github.event_name == 'release' || inputs.dry_run == false }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Summary
+        run: |
+          {
+            echo "### Image"
+            echo
+            if [ "${{ github.event_name }}" = "release" ] || [ "${{ inputs.dry_run }}" = "false" ]; then
+              echo "Pushed:"
+              echo '```'
+              echo "${{ steps.meta.outputs.tags }}"
+              echo '```'
+              echo "Digest: \`${{ steps.push.outputs.digest }}\`"
+            else
+              echo "Dry run — built and smoke-tested, nothing pushed."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

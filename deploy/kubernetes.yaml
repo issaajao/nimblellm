@@ -80,7 +80,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: nimblellm
-          image: ghcr.io/nimblellm/nimblellm:0.1.0 # pin a digest in production
+          image: ghcr.io/issaajao/nimblellm:0.1.0 # pin a digest in production
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
