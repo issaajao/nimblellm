@@ -4,7 +4,7 @@ Things that are true about NimbleLLM today and worth knowing before you rely on
 it. Kept honest and current — if something here stops being true, the fix is to
 edit this file, not to quietly leave it stale.
 
-Last reviewed: **2026-08-12** (v0.1.0, phase 6 of 6).
+Last reviewed: **2026-08-13** (v0.1.0, phase 6 of 6).
 
 One entry here has already earned its keep: §1 records a real signing defect that
 live verification caught and unit tests could not — found, fixed, and confirmed
@@ -19,13 +19,14 @@ real providers.** Everything else in the repository — the README, the docs, th
 verification script's own output — links here rather than restating it, so there
 is exactly one place to update when this changes.
 
-| Area                           | Checked against a real provider?                                                                                     |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Bedrock SigV4 signing          | ✅ Yes — found and fixed a real defect ([§1](#1-aws-bedrock-sigv4-signing))                                          |
-| Bedrock event-stream decoding  | ❌ Not yet — has never decoded real AWS bytes ([§6](#6-streaming-caveats))                                           |
-| Response parsing, any provider | ❌ Not yet — no live response body has been parsed ([§2](#2-no-provider-has-been-exercised-against-a-live-endpoint)) |
-| Container image                | ❌ Never built ([§7](#7-operational-gaps))                                                                           |
-| Everything else                | Tested against mocked transports and local stub servers                                                              |
+| Area                                      | Checked against a real provider?                                                                   |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Bedrock SigV4 signing                     | ✅ Yes — found and fixed a real defect ([§1](#1-aws-bedrock-sigv4-signing))                        |
+| Bedrock non-streaming round trip          | ✅ Yes — a real completion, correctly normalized ([§2](#2-live-coverage-by-provider-and-path))     |
+| Bedrock streaming / event-stream decoding | ❌ Not yet — has never decoded real AWS bytes ([§6](#6-streaming-caveats))                         |
+| OpenAI, Azure, Vertex — any path          | ❌ Not yet — no live call has been made ([§2](#2-live-coverage-by-provider-and-path))              |
+| Container image                           | ⚠️ Built and run locally, serving a real completion; not yet published ([§7](#7-operational-gaps)) |
+| Everything else                           | Tested against mocked transports and local stub servers                                            |
 
 Re-check any of it with `npm run verify:live`, which contacts real providers and
 is manual by design. Record what you find here.
@@ -81,9 +82,13 @@ server-side. **Signing is verified.**
 
 ### What this does not cover
 
-A completion that actually returns content, and the streaming path. Both were
-blocked by account entitlement, not by anything in this codebase — see §6, where
-that residual gap is tracked. It is a response-parsing gap, not a signing one.
+Only the streaming path. A non-streaming completion has since returned real
+content through the container, exercising response parsing end to end
+([§2](#2-live-coverage-by-provider-and-path)) — so the entitlement wall that
+blocked these three runs has been cleared with a different model.
+
+The remaining gap is the binary event-stream decoder ([§6](#6-streaming-caveats)),
+which is a response-parsing gap and not a signing one.
 
 To re-verify at any time, with an account entitled to invoke a Bedrock model:
 
@@ -102,16 +107,47 @@ is **not** part of `npm test` and must not be added to CI.
 
 ---
 
-## 2. No provider has been exercised against a live endpoint
+## 2. Live coverage, by provider and path
 
-The same is true of OpenAI, Azure and Vertex, and `verify-live` covers them
-too — but the risk is materially lower. Their authentication is a token in a
-header, and their request and response shapes are exercised against realistic
-payloads in the unit tests. What a live run would additionally catch there is
-narrower: a wrong default API version, a model id that no longer exists, a
-response field that moved.
+Only AWS Bedrock has been exercised against a live endpoint, and only on the
+non-streaming path. Everything else in the repository is tested against mocked
+transports and local stub servers.
 
-Everything in the repository today is tested against mocked transports.
+### Verified: Bedrock, non-streaming, through the container
+
+|          |                                                                                                                 |
+| -------- | --------------------------------------------------------------------------------------------------------------- |
+| Date     | 13 August 2026                                                                                                  |
+| Provider | AWS Bedrock                                                                                                     |
+| Region   | us-east-2                                                                                                       |
+| Model    | `us.anthropic.claude-sonnet-4-5-20250929-v1:0`                                                                  |
+| Path     | `docker build` → `docker run -p 8080:8080 --env-file .env` → `curl POST /v1/chat/completions` with a Bearer key |
+| Result   | 200 OK, correctly normalized — `finishReason: "stop"`, content and usage tokens all present and correct         |
+
+The same container also served `GET /health` (200) and `GET /ready` (200,
+listing the configured providers).
+
+This exercised the whole chain end to end: request normalization, routing,
+SigV4 signing, transport, Converse response parsing, and the gateway's own HTTP
+surface — inside the built image rather than against the library directly. It is
+the strongest single piece of evidence in this file.
+
+Note the path: this was **not** run through `verify-live`. That script covers
+the same ground plus streaming, but the round trip above was performed with
+`curl` against a running container, which additionally proves the image works.
+
+### Not verified
+
+- **Bedrock streaming.** The `stream: true` path, the SSE surface, and the
+  binary event-stream decoder were not exercised. See
+  [§6](#6-streaming-caveats).
+- **OpenAI, Azure and Vertex — any path.** No live call has been made to any of
+  them. The risk is materially lower than it was for Bedrock: their
+  authentication is a token in a header rather than a signature this codebase
+  computes, and their request and response shapes are exercised against
+  realistic payloads in the unit tests. What a live run would additionally catch
+  is narrower — a wrong default API version, a model id that no longer exists, a
+  response field that moved.
 
 ---
 
@@ -172,16 +208,22 @@ tenant is the supported multi-tenant story.
 - **Bedrock's binary event-stream decoder has not seen real AWS bytes.** This is
   the one residual gap from the §1 verification effort, and it is **low risk but
   open**. The frame decoder is tested against frames constructed in the test
-  suite from the documented layout; live verification reached AWS successfully
-  three times but was blocked at model entitlement before any response body was
-  returned, so no real frames were ever decoded.
+  suite from the documented layout. The live Bedrock call that has succeeded
+  ([§2](#2-live-coverage-by-provider-and-path)) went through the non-streaming
+  path, so `converse-stream` has still never been called and no real frame has
+  ever been decoded.
 
-  Note what this is _not_: signing is verified (§1), and the decoder is a pure
-  byte-parsing routine with no dependency on credentials or network state. The
-  plausible failure is a field-layout misreading, which would present
-  unmistakably — `npm run verify:live` fails its `stream` leg if the body
-  arrives and decodes to zero events, and reports it as a decoding fault rather
-  than a signing one. Closing it needs one run on an entitled account.
+  Note what this is _not_: signing is verified (§1), and so now is non-streaming
+  request and response handling (§2) — the decoder is the only Bedrock component
+  still unexercised. It is a pure byte-parsing routine with no dependency on
+  credentials or network state, and the plausible failure is a field-layout
+  misreading, which would present unmistakably: `npm run verify:live` fails its
+  `stream` leg if the body arrives and decodes to zero events, and reports it as
+  a decoding fault rather than a signing one.
+
+  Closing it needs one request with `stream: true` against the same account and
+  model that already work — either `npm run verify:live`, or a `curl` to the
+  gateway with `"stream": true` in the body.
 
   The same caveat applies more weakly to `parseResponse` on Bedrock: no live
   Converse response body has been parsed. Its shape is exercised against
@@ -198,10 +240,13 @@ tenant is the supported multi-tenant story.
 - **No request/response body logging**, deliberately — prompts frequently carry
   sensitive data. `NIMBLE_LOG_LEVEL=debug` raises verbosity but still never
   logs bodies.
-- **The container image is unsigned and unpublished.** No image exists at
-  `ghcr.io/issaajao/nimblellm` yet; the references in the README and
-  Kubernetes manifest are what publishing will produce, not something you can
-  pull today.
+- **The container image is built and working, but not yet published.** It has
+  been built and run locally, serving a real Bedrock completion end to end
+  ([§2](#2-live-coverage-by-provider-and-path)), and CI now builds and
+  smoke-tests it on every change. What has not happened is a push: no image
+  exists at `ghcr.io/issaajao/nimblellm` yet, so the references in the README
+  and Kubernetes manifest are not something you can pull today. Publish with
+  Actions → Publish image; see [RELEASING.md](./RELEASING.md).
 
 ---
 

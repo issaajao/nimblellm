@@ -6,12 +6,12 @@
   "author": "NimbleLLM contributors",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nimblellm/nimblellm.git"
+    "url": "git+https://github.com/issaajao/nimblellm.git"
   },
   "bugs": {
-    "url": "https://github.com/nimblellm/nimblellm/issues"
+    "url": "https://github.com/issaajao/nimblellm/issues"
   },
-  "homepage": "https://github.com/nimblellm/nimblellm#readme",
+  "homepage": "https://github.com/issaajao/nimblellm#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
