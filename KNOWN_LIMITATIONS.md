@@ -4,7 +4,7 @@ Things that are true about NimbleLLM today and worth knowing before you rely on
 it. Kept honest and current — if something here stops being true, the fix is to
 edit this file, not to quietly leave it stale.
 
-Last reviewed: **2026-08-13** (v0.1.0, phase 6 of 6).
+Last reviewed: **2026-08-15** (v0.1.0, phase 6 of 6).
 
 One entry here has already earned its keep: §1 records a real signing defect that
 live verification caught and unit tests could not — found, fixed, and confirmed
@@ -19,14 +19,14 @@ real providers.** Everything else in the repository — the README, the docs, th
 verification script's own output — links here rather than restating it, so there
 is exactly one place to update when this changes.
 
-| Area                                      | Checked against a real provider?                                                                   |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Bedrock SigV4 signing                     | ✅ Yes — found and fixed a real defect ([§1](#1-aws-bedrock-sigv4-signing))                        |
-| Bedrock non-streaming round trip          | ✅ Yes — a real completion, correctly normalized ([§2](#2-live-coverage-by-provider-and-path))     |
-| Bedrock streaming / event-stream decoding | ❌ Not yet — has never decoded real AWS bytes ([§6](#6-streaming-caveats))                         |
-| OpenAI, Azure, Vertex — any path          | ❌ Not yet — no live call has been made ([§2](#2-live-coverage-by-provider-and-path))              |
-| Container image                           | ⚠️ Built and run locally, serving a real completion; not yet published ([§7](#7-operational-gaps)) |
-| Everything else                           | Tested against mocked transports and local stub servers                                            |
+| Area                                      | Checked against a real provider?                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Bedrock SigV4 signing                     | ✅ Yes — found and fixed a real defect ([§1](#1-aws-bedrock-sigv4-signing))                            |
+| Bedrock non-streaming round trip          | ✅ Yes — a real completion, correctly normalized ([§2](#2-live-coverage-by-provider-and-path))         |
+| Bedrock streaming / event-stream decoding | ❌ Not yet — has never decoded real AWS bytes ([§6](#6-streaming-caveats))                             |
+| OpenAI, Azure, Vertex — any path          | ❌ Not yet — no live call has been made ([§2](#2-live-coverage-by-provider-and-path))                  |
+| Container image                           | ✅ Yes — published, pulled anonymously, and smoke-tested from the registry ([§7](#7-operational-gaps)) |
+| Everything else                           | Tested against mocked transports and local stub servers                                                |
 
 Re-check any of it with `npm run verify:live`, which contacts real providers and
 is manual by design. Record what you find here.
@@ -240,13 +240,14 @@ tenant is the supported multi-tenant story.
 - **No request/response body logging**, deliberately — prompts frequently carry
   sensitive data. `NIMBLE_LOG_LEVEL=debug` raises verbosity but still never
   logs bodies.
-- **The container image is built and working, but not yet published.** It has
-  been built and run locally, serving a real Bedrock completion end to end
-  ([§2](#2-live-coverage-by-provider-and-path)), and CI now builds and
-  smoke-tests it on every change. What has not happened is a push: no image
-  exists at `ghcr.io/issaajao/nimblellm` yet, so the references in the README
-  and Kubernetes manifest are not something you can pull today. Publish with
-  Actions → Publish image; see [RELEASING.md](./RELEASING.md).
+- **The container image is published and independently verified.**
+  `ghcr.io/issaajao/nimblellm:0.1.0` (and `:latest`) is public, builds for
+  linux/amd64 and linux/arm64, and carries a signed provenance attestation
+  tracing it to `publish-image.yml` at commit `a99ed55`. It has been pulled
+  anonymously — logged out of ghcr, so as any stranger would — and passed the
+  smoke test from the registry rather than from a local build. CI additionally
+  builds and smoke-tests the image on every change. Verify it yourself with
+  `gh attestation verify oci://ghcr.io/issaajao/nimblellm:0.1.0 --owner issaajao`.
 
 ---
 
