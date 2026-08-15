@@ -120,17 +120,40 @@ The same thing ships as a container: one service in front of every provider, so
 that credentials live in one place instead of in every application that needs a
 model.
 
+The quickest way to try it is the published image, which needs no checkout:
+
+```bash
+docker run -p 8080:8080 \
+  -e NIMBLE_SERVER_API_KEYS=dev-key \
+  -e OPENAI_API_KEY=sk-... \
+  ghcr.io/issaajao/nimblellm:0.1.0
+```
+
+It is public, builds for `linux/amd64` and `linux/arm64`, and carries a
+provenance attestation you can check before running it:
+
+```bash
+gh attestation verify oci://ghcr.io/issaajao/nimblellm:0.1.0 --owner issaajao
+```
+
+In production, pin the digest rather than the tag — tags move, digests do not.
+
+**Or build from source**, to run a specific commit or to try a change you are
+working on. With compose:
+
 ```bash
 cp .env.example .env      # fill in the providers you use
 docker compose up --build
 ```
 
-Or without compose:
+Or without:
 
 ```bash
 docker build -t nimblellm:local .
 docker run -p 8080:8080 --env-file .env nimblellm:local
 ```
+
+Either way, the gateway answers the same:
 
 ```bash
 curl localhost:8080/v1/chat/completions \
