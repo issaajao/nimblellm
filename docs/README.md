@@ -1,6 +1,8 @@
 # NimbleLLM documentation
 
-One request shape for OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and Google Vertex AI.
+Know which providers can serve a request — before you send it.
+
+OpenAI · Anthropic · AWS Bedrock · Azure OpenAI · Google Vertex AI
 
 ## Start here
 

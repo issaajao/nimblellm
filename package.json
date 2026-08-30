@@ -1,7 +1,7 @@
 {
   "name": "nimblellm",
   "version": "0.1.0",
-  "description": "One request shape for OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and Google Vertex AI.",
+  "description": "Know which LLM providers can serve a request before you send it — portability and capability checks across OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and Google Vertex AI.",
   "license": "MIT",
   "author": "Issa Ajao",
   "repository": {

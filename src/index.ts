@@ -1,6 +1,10 @@
 /**
- * NimbleLLM — one request shape for OpenAI, Anthropic, AWS Bedrock,
- * Azure OpenAI and Google Vertex AI.
+ * NimbleLLM — know which providers can serve a request before you send it.
+ *
+ * A portability layer over OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and
+ * Google Vertex AI: one canonical request shape, and a router that reports
+ * which providers can express a given request rather than letting them
+ * discover it by returning a 400.
  *
  * @packageDocumentation
  */

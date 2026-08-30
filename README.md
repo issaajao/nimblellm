@@ -1,6 +1,8 @@
 # NimbleLLM
 
-**One request shape for OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and Google Vertex AI.**
+**Know which providers can serve a request — before you send it.**
+
+<sub>OpenAI · Anthropic · AWS Bedrock · Azure OpenAI · Google Vertex AI</sub>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
@@ -18,36 +20,93 @@
 ## Why
 
 Every LLM provider has settled on roughly the same idea — a list of messages, a
-few sampling knobs, some tools — and then spelled it differently.
-`max_tokens` here, `maxOutputTokens` there, `maxTokenCount` somewhere else.
-System prompts live inside the message list on one API and in a top-level field
-on the next. Tool arguments arrive as a JSON string from one provider and as a
-parsed object from another.
+few sampling knobs, some tools — and then diverged on what they will actually
+accept. Bedrock has no JSON schema output. OpenAI has no `topK`. Anthropic caps
+temperature at 1 where OpenAI allows 2. Vertex takes no request metadata.
+Stop-sequence limits differ four ways.
 
-The result is that "let's try this on a different model" turns into a
-refactor, and every application ends up growing its own half-finished
-translation layer.
+None of that is visible from your code. You find out when a request that worked
+on one provider returns a 400 from another — three layers down, in production,
+on the path you didn't test.
 
-NimbleLLM is that layer, extracted and done properly:
+NimbleLLM makes that answerable in advance. Ask it about a request, and it tells
+you where the request can go:
 
-- **One request shape.** Write against a single canonical schema; the provider
-  is a routing prefix on the model name (`openai/gpt-4o`,
-  `bedrock/anthropic.claude-sonnet-4-20250514-v1:0`).
-- **One response shape.** Content parts, tool calls, finish reasons and token
-  usage are normalized on the way back out.
-- **One error type.** Validation failures and provider errors both surface as a
-  `NimbleError` with a stable `code` you can switch on.
-- **Strict by default.** A typo like `max_tokns` is rejected at the call site
-  rather than silently dropped somewhere over the wire.
-- **No lock-in.** Provider-specific features stay reachable through an explicit
-  `providerOptions` escape hatch instead of being flattened away.
-- **Runs as a library or a container.** Import it into a Node service, or run
-  it as a standalone gateway (phase 4).
+```bash
+npx nimblellm check --model gpt-4o --tools --json-schema --seed --temperature 0.7
+```
+
+```
+nimblellm check · inline flags
+
+                      openai  azure  bedrock  vertex  anthropic
+  tools                 ✓       ✓       ✓       ✓         ✓
+  JSON schema output    ✓       ✓       ✗       ✓         ✗
+  seed                  ✓       ✓       ✗       ✓         ✗
+  temperature (0.7)     ✓       ✓       ✓       ✓         ✓
+
+  Portable across: 3/5 providers (openai, azure, vertex)
+
+  Blocked on bedrock    JSON schema output, seed
+  Blocked on anthropic  JSON schema output, seed
+```
+
+No credentials, no client, no account, no code. That is the entire setup.
+
+The same answer is available in code, from the same functions — this is the
+routing logic itself, not a report about it:
+
+```ts
+router.candidatesFor(request); // ['openai', 'azure', 'vertex']
+router.supports('vertex', 'top_k'); // true
+```
+
+Which is what fallback chains are built from: ask where a request can go, then
+send it there — instead of sending it hopefully and handling the failure.
+
+### How it delivers that
+
+Asking "where can this run?" requires one shape to ask the question _about_. So
+there is a canonical request, and the provider is a routing prefix on the model
+name (`openai/gpt-4o`, `anthropic/claude-sonnet-4-5-20250929`). Everything else
+follows from wanting that question answered honestly:
+
+- **Capabilities are declared, not discovered by failing.** Each adapter states
+  what it can express; the router checks a request against that before building
+  anything, and reports every problem at once with a hint for each.
+- **Nothing is silently reinterpreted.** A temperature outside a provider's
+  range is rejected, not rescaled. A typo like `max_tokns` is rejected, not
+  dropped. If a request would mean something different somewhere else, you hear
+  about it.
+- **One response shape, one error type.** Content parts, tool calls, finish
+  reasons and usage are normalized coming back; failures — validation or
+  provider — all arrive as a `NimbleError` with a stable `code`.
+- **No lock-in.** What a provider offers beyond the canonical shape stays
+  reachable through an explicit `providerOptions` escape hatch, rather than
+  being flattened away.
+- **Library or container.** Import it, or run it as a gateway so credentials
+  live in one place.
+
+### Is this the right tool for you?
+
+If you are building an application — streaming UI, React components, framework
+routes, generative interfaces — the **Vercel AI SDK** is a mature,
+TypeScript-first toolkit built for exactly that, and it is good at it. It is the
+better choice for that work, and nothing here competes with it.
+
+NimbleLLM is a narrower thing. It has no UI layer, no framework integration, and
+no opinion about how you render a token. It is for services and backends that
+route between providers and need to know, in advance and in code, what each one
+supports — the part of the problem that shows up when you operate several
+providers rather than when you build a screen. The two can sit in one codebase
+without overlapping.
 
 ### Non-goals
 
 NimbleLLM is not a prompt framework, an agent runtime, or a vector store. It
-normalizes requests and responses and gets out of the way.
+does routing and portability, not application scaffolding. It also does not ping
+providers for health, price or latency — `check` is static analysis, and stays
+that way.
 
 ---
 
@@ -515,8 +574,10 @@ router.candidatesFor(request); // ['openai', 'azure', 'vertex']
 router.supports('vertex', 'top_k'); // true
 ```
 
+These are the functions behind the opening example, and behind `check`.
 `candidatesFor` returns the registered providers that could serve a request as
-written, which is the building block for fallback chains.
+written — the building block for fallback chains, and the reason a portability
+report cannot disagree with routing: it is the same call.
 
 ### `nimblellm check` — the same answer from the terminal
 
@@ -683,4 +744,4 @@ build by design.
 
 ## License
 
-[MIT](./LICENSE) © NimbleLLM contributors
+[MIT](./LICENSE) © Issa Ajao
