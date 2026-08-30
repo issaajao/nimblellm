@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "One request shape for OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and Google Vertex AI.",
   "license": "MIT",
-  "author": "NimbleLLM contributors",
+  "author": "Issa Ajao",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/issaajao/nimblellm.git"
@@ -27,6 +27,7 @@
   },
   "files": [
     "dist",
+    "!dist/scripts",
     "README.md",
     "LICENSE",
     "KNOWN_LIMITATIONS.md"
@@ -67,6 +68,14 @@
   ],
   "dependencies": {
     "zod": "^4.0.0"
+  },
+  "peerDependencies": {
+    "@types/node": ">=20"
+  },
+  "peerDependenciesMeta": {
+    "@types/node": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

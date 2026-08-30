@@ -27,7 +27,8 @@ not one.
    `LICENSE`, `KNOWN_LIMITATIONS.md`. No sources, no tests, no `.env`.
 5. **Run the dry run.** Actions → Release → Run workflow with `dry_run: true`.
    It runs the full gate and uploads the tarball without publishing.
-6. **Publish.** Same workflow with `dry_run: false`.
+6. **Publish.** Same workflow with `dry_run: false` — or by hand for a first
+   release, which trusted publishing cannot do. See below.
 7. **Tag** the released commit (`git tag v0.1.0 && git push --tags`) and write
    release notes.
 
@@ -51,37 +52,54 @@ Not mechanically enforced, but worth doing:
   attestation to `ghcr.io/issaajao/nimblellm`. A published GitHub release
   triggers the same workflow automatically.
 
-## npm credentials
+## Publishing to npm
 
-The Release workflow publishes with provenance, which needs two things that do
-not exist by default and are not created by this repository:
+The Release workflow uses **trusted publishing** (OIDC): the job authenticates
+with a short-lived token minted by GitHub for that run. There is no npm token in
+this repository to leak, rotate, or scope wrongly, and provenance — a signed
+link between the tarball and the commit and workflow that produced it — is
+generated automatically.
 
-- **A `release` environment** on the repository (Settings → Environments). The
-  workflow declares `environment: release`; without it the run fails before it
-  does anything.
-- **`NPM_TOKEN`** as a secret on that environment — an npm **automation** token,
-  which is the token type that works with 2FA enabled on the account.
+Configure it once, on npmjs.com → the package → Settings → Trusted publisher:
 
-Publishing this way is worth the setup: `npm publish --provenance` produces a
-signed link between the tarball and the commit and workflow that built it, the
-same guarantee the container image carries. It cannot be produced by a
-hand-run publish, which has no OIDC identity to sign with.
+| Field       | Value          |
+| ----------- | -------------- |
+| Publisher   | GitHub Actions |
+| Owner       | `issaajao`     |
+| Repository  | `nimblellm`    |
+| Workflow    | `release.yml`  |
+| Environment | `release`      |
 
-**Publishing by hand** is the alternative and needs no repository setup:
+The environment field must match the `environment:` in the workflow, or be left
+blank. The workflow declares `release`, so enter that or nothing — a mismatch
+fails the publish with an unhelpful authentication error.
+
+### The first version cannot use it
+
+A trusted publisher is configured on a package's settings page, and that page
+does not exist until the package does. **The initial publish has to happen
+another way**, after which every subsequent release goes through the workflow.
+
+For a first release, publish by hand:
 
 ```bash
 npm login          # 2FA prompt
 npm publish        # runs prepublishOnly: clean, format, types, build, tests
 ```
 
-That path forgoes provenance and the workflow's "is this version already
-published?" guard. Check the version yourself first:
+Then configure the trusted publisher as above, and use the workflow from the
+next version onwards. The cost of this is that the first version carries no
+provenance while later ones do; the alternative — publishing a throwaway
+placeholder version purely to create the settings page — buys a signed 0.1.0 at
+the price of a junk version in the public history, which is a bad trade.
+
+Before publishing by hand, check the version is free:
 
 ```bash
 npm view nimblellm@$(node -p "require('./package.json').version") version
 ```
 
-A 404 there means the version is free.
+A 404 means it is available.
 
 ## Versioning
 

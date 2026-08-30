@@ -11,20 +11,37 @@ on:
 
 permissions:
   contents: read
-  id-token: write # npm provenance
+  # npm trusted publishing. The job authenticates with a short-lived OIDC token
+  # minted by GitHub for this run, so there is no npm token in this repository
+  # to leak, rotate, or scope wrongly.
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    # If the trusted publisher on npmjs.com names an environment, it must be
+    # this one. Keeping it also allows a required-reviewer gate on publishing.
     environment: release
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # Trusted publishing needs Node >= 22.14 and npm >= 11.5.1. Node 24 is
+          # used because it is the line that ships an npm new enough; the
+          # package itself still supports Node 20.19, which the CI matrix
+          # covers.
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: npm
+
+      # Which npm a given Node 24 patch bundles moves over time, and a release
+      # workflow runs rarely enough that discovering it is too old at publish
+      # time is a bad way to find out. Pin the floor explicitly.
+      - name: Use an npm that can authenticate over OIDC
+        run: |
+          npm install -g npm@^11.5.1
+          npm --version
 
       - run: npm ci
 
@@ -62,8 +79,14 @@ jobs:
           name: package-tarball
           path: '*.tgz'
 
+      # No NODE_AUTH_TOKEN: the npm CLI detects the OIDC environment and
+      # exchanges the run's identity for a short-lived publish token. Provenance
+      # is generated automatically, so `--provenance` is not passed. Access is
+      # public by default for an unscoped package.
+      #
+      # This cannot publish a version of a package that does not exist yet: a
+      # trusted publisher is configured on the package's settings page, which
+      # requires the package to be there. See RELEASING.md.
       - name: Publish
         if: ${{ inputs.dry_run == false }}
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish
