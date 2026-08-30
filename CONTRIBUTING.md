@@ -5,7 +5,7 @@ be, how to get set up, and the few conventions that are load-bearing.
 
 ## What this project is
 
-NimbleLLM normalizes requests and responses across OpenAI, AWS Bedrock, Azure
+NimbleLLM normalizes requests and responses across OpenAI, Anthropic, AWS Bedrock, Azure
 OpenAI and Google Vertex AI, and gets out of the way. It is **not** a prompt
 framework, an agent runtime, or a vector store. Contributions that pull it
 toward those are likely to be declined, however good the code — say what you

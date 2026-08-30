@@ -1,7 +1,7 @@
 # Examples
 
 Nine runnable programs. Every one of them is **executed by the test suite**
-against a stub that impersonates all four providers — see
+against a stub that impersonates every provider — see
 [`test/examples.test.ts`](../test/examples.test.ts). Documentation that has
 never been run is documentation that is quietly wrong, so this is asserted
 rather than claimed.

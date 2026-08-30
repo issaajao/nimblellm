@@ -64,7 +64,8 @@ That is what lets the same shape carry images and tool calls without a second
 code path. It costs one line here and saves a rewrite later.
 
 **System messages are hoisted.** They come out of the message list into a
-top-level `system` field, because Bedrock and Vertex carry them separately:
+top-level `system` field, because every provider but OpenAI carries them
+separately:
 
 ```ts
 const request = normalizeRequest({

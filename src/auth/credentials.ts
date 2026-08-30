@@ -1,9 +1,9 @@
 /**
  * Turning configuration into request headers.
  *
- * Each provider authenticates differently — a bearer key, a resource key, a
- * SigV4 signature, a minted OAuth token — so this is where those four shapes
- * collapse back into "headers to add to this request".
+ * Each provider authenticates differently — a bearer key, a resource key, an
+ * `x-api-key`, a SigV4 signature, a minted OAuth token — so this is where those
+ * shapes collapse back into "headers to add to this request".
  *
  * A `Credentials` object never exposes its secrets; it only produces headers
  * for a request it has been shown.
@@ -11,6 +11,7 @@
 
 import { NimbleError } from '../errors.js';
 import type {
+  AnthropicConfig,
   AzureConfig,
   BedrockConfig,
   NimbleConfig,
@@ -182,6 +183,38 @@ export class VertexCredentials implements Credentials {
 }
 
 // ---------------------------------------------------------------------------
+// Anthropic
+// ---------------------------------------------------------------------------
+
+/**
+ * Anthropic is the one provider that authenticates with neither a bearer token
+ * nor a signature: the key goes in `x-api-key`, unprefixed.
+ *
+ * `anthropic-version` rides along here despite not being a credential. It is
+ * configuration rather than anything derived from the request, and this is the
+ * layer that holds configuration — the alternative, routing it through
+ * `providerOptions` the way Azure's API version travels, would put it in the
+ * request *body*, where Anthropic would reject it as an unknown field.
+ */
+export class AnthropicCredentials implements Credentials {
+  readonly provider = 'anthropic' as const;
+  readonly baseUrl: string;
+  readonly #config: AnthropicConfig;
+
+  constructor(config: AnthropicConfig) {
+    this.#config = config;
+    this.baseUrl = config.baseUrl;
+  }
+
+  async authorize(): Promise<Record<string, string>> {
+    return {
+      'x-api-key': this.#config.apiKey.reveal(),
+      'anthropic-version': this.#config.version,
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Registry
 // ---------------------------------------------------------------------------
 
@@ -256,6 +289,11 @@ export class CredentialRegistry {
           ]);
         }
         return new VertexCredentials(config, this.#options);
+      }
+      case 'anthropic': {
+        const config = this.#config.anthropic;
+        if (config === undefined) throw notConfigured('anthropic', ['ANTHROPIC_API_KEY']);
+        return new AnthropicCredentials(config);
       }
     }
   }

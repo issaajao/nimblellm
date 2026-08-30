@@ -4,6 +4,7 @@
 
 import type { ProviderId } from '../types.js';
 import type { ProviderAdapter } from './adapter.js';
+import { anthropicAdapter } from './anthropic.js';
 import { azureAdapter } from './azure.js';
 import { bedrockAdapter } from './bedrock.js';
 import { openaiAdapter } from './openai.js';
@@ -14,6 +15,7 @@ export const builtInAdapters: readonly ProviderAdapter[] = Object.freeze([
   azureAdapter,
   bedrockAdapter,
   vertexAdapter,
+  anthropicAdapter,
 ]);
 
 /** Adapters keyed by provider id, for direct lookup outside a router. */
@@ -22,8 +24,10 @@ export const adaptersById: Readonly<Record<ProviderId, ProviderAdapter>> = Objec
   azure: azureAdapter,
   bedrock: bedrockAdapter,
   vertex: vertexAdapter,
+  anthropic: anthropicAdapter,
 });
 
+export { AnthropicAdapter, anthropicAdapter, DEFAULT_MAX_OUTPUT_TOKENS } from './anthropic.js';
 export { AzureOpenAIAdapter, azureAdapter, DEFAULT_AZURE_API_VERSION } from './azure.js';
 export { BedrockAdapter, bedrockAdapter } from './bedrock.js';
 export { OpenAIAdapter, openaiAdapter } from './openai.js';

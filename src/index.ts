@@ -1,6 +1,6 @@
 /**
- * NimbleLLM — one request shape for OpenAI, AWS Bedrock, Azure OpenAI and
- * Google Vertex AI.
+ * NimbleLLM — one request shape for OpenAI, Anthropic, AWS Bedrock,
+ * Azure OpenAI and Google Vertex AI.
  *
  * @packageDocumentation
  */
@@ -51,6 +51,8 @@ export {
   assertCapabilities,
   assertWithinLimits,
   requiredCapabilities,
+  AnthropicAdapter,
+  anthropicAdapter,
   AzureOpenAIAdapter,
   azureAdapter,
   BedrockAdapter,
@@ -60,6 +62,7 @@ export {
   VertexAdapter,
   vertexAdapter,
   DEFAULT_AZURE_API_VERSION,
+  DEFAULT_MAX_OUTPUT_TOKENS,
   type Capability,
   type ProviderAdapter,
   type ProviderLimits,
@@ -69,6 +72,7 @@ export {
 export type { ChatCompletionsPayload } from './providers/openai-compatible.js';
 export type { ConversePayload } from './providers/bedrock.js';
 export type { GeminiPayload } from './providers/vertex.js';
+export type { MessagesPayload } from './providers/anthropic.js';
 
 export {
   NimbleClient,
@@ -89,6 +93,9 @@ export {
   DEFAULT_OPENAI_BASE_URL,
   DEFAULT_TIMEOUT_MS,
   DEFAULT_VERTEX_LOCATION,
+  DEFAULT_ANTHROPIC_BASE_URL,
+  DEFAULT_ANTHROPIC_VERSION,
+  type AnthropicConfig,
   type AzureConfig,
   type ConfigOverrides,
   type BedrockConfig,
@@ -101,6 +108,7 @@ export {
 
 export {
   CredentialRegistry,
+  AnthropicCredentials,
   AzureCredentials,
   BedrockCredentials,
   OpenAICredentials,
@@ -132,4 +140,5 @@ export {
 export { send, codeForStatus, type HttpRequest, type SendOptions } from './transport/http.js';
 export { readEventStream, readJsonEventStream } from './transport/sse.js';
 export { EventStreamDecoder, readBedrockStream } from './transport/aws-event-stream.js';
+export { readAnthropicStream } from './transport/anthropic-stream.js';
 export { VERSION } from './version.js';

@@ -45,6 +45,7 @@ const DEFAULT_MODELS: Readonly<Record<ProviderId, string | undefined>> = {
   // (eu./au./global.) to match your data-residency requirement.
   bedrock: 'us.anthropic.claude-opus-5',
   vertex: 'gemini-2.0-flash',
+  anthropic: 'claude-haiku-4-5-20251001',
 };
 
 const MODEL_ENV: Readonly<Record<ProviderId, string>> = {
@@ -52,6 +53,7 @@ const MODEL_ENV: Readonly<Record<ProviderId, string>> = {
   azure: 'VERIFY_AZURE_DEPLOYMENT',
   bedrock: 'VERIFY_BEDROCK_MODEL',
   vertex: 'VERIFY_VERTEX_MODEL',
+  anthropic: 'VERIFY_ANTHROPIC_MODEL',
 };
 
 const PROMPT = 'Reply with the single word: ok';
@@ -297,12 +299,14 @@ function summarize(checks: readonly Check[], secrets: readonly Secret[]): void {
           `${GREEN}The binary event-stream decoder also handled real AWS frames.${RESET}`,
         );
       }
-      console.log(
-        `\n${DIM}Record this in KNOWN_LIMITATIONS.md — date, region, model — and update its\n` +
-          `"Verification status" section, which is where the rest of the repository reads\n` +
-          `this from.${RESET}`,
-      );
     }
+
+    console.log(
+      `\n${DIM}Record this in KNOWN_LIMITATIONS.md — date, provider, model, and which legs\n` +
+        `ran — and update its "Verification status" section, which is where the rest of\n` +
+        `the repository reads this from. A provider stays marked unverified there until\n` +
+        `a run like this one says otherwise.${RESET}`,
+    );
     return;
   }
 

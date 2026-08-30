@@ -17,6 +17,7 @@ const MODELS: Record<string, string | undefined> = {
   azure: process.env['AZURE_DEPLOYMENT'],
   bedrock: process.env['BEDROCK_MODEL'] ?? 'anthropic.claude-haiku-4-5-20251001-v1:0',
   vertex: process.env['VERTEX_MODEL'] ?? 'gemini-2.0-flash',
+  anthropic: process.env['ANTHROPIC_MODEL'] ?? 'claude-haiku-4-5-20251001',
 };
 
 /** Identical for every provider — only `model` is filled in per call. */

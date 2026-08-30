@@ -18,6 +18,17 @@ with `authentication_error`, naming the variables it wanted.
 | `OPENAI_ORG_ID`     | no       | —                        |
 | `OPENAI_PROJECT_ID` | no       | —                        |
 
+### Anthropic
+
+| Variable             | Required | Default                     |
+| -------------------- | -------- | --------------------------- |
+| `ANTHROPIC_API_KEY`  | yes      | —                           |
+| `ANTHROPIC_BASE_URL` | no       | `https://api.anthropic.com` |
+| `ANTHROPIC_VERSION`  | no       | `2023-06-01`                |
+
+The key is sent as `x-api-key`, not as a bearer token, and `ANTHROPIC_VERSION`
+becomes the `anthropic-version` header required on every request.
+
 ### Azure OpenAI
 
 | Variable                    | Required         | Default      |

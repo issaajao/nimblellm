@@ -21,8 +21,8 @@ describe('Router', () => {
       expect(routed.adapter.id).toBe(provider);
     });
 
-    it('registers all four built-in providers', () => {
-      expect(router.providers()).toEqual(['openai', 'azure', 'bedrock', 'vertex']);
+    it('registers every built-in provider', () => {
+      expect(router.providers()).toEqual(['openai', 'azure', 'bedrock', 'vertex', 'anthropic']);
     });
 
     it('reports an unregistered provider', () => {
@@ -44,7 +44,7 @@ describe('Router', () => {
 
       const custom = new Router().register(stub);
       expect(custom.route(req({})).route.path).toBe('custom/path');
-      expect(custom.providers()).toEqual(['openai', 'azure', 'bedrock', 'vertex']);
+      expect(custom.providers()).toEqual(['openai', 'azure', 'bedrock', 'vertex', 'anthropic']);
     });
 
     it('exposes capability lookup without building a request', () => {
@@ -212,12 +212,18 @@ describe('Router', () => {
 
   describe('candidatesFor', () => {
     it('lists every provider for a plain request', () => {
-      expect(router.candidatesFor(req({}))).toEqual(['openai', 'azure', 'bedrock', 'vertex']);
+      expect(router.candidatesFor(req({}))).toEqual([
+        'openai',
+        'azure',
+        'bedrock',
+        'vertex',
+        'anthropic',
+      ]);
     });
 
     it('excludes providers that cannot express the request', () => {
       expect(router.candidatesFor(req({ seed: 42 }))).toEqual(['openai', 'azure', 'vertex']);
-      expect(router.candidatesFor(req({ top_k: 40 }))).toEqual(['vertex']);
+      expect(router.candidatesFor(req({ top_k: 40 }))).toEqual(['vertex', 'anthropic']);
     });
 
     it('excludes providers whose ranges the request exceeds', () => {

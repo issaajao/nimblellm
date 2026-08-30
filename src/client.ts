@@ -21,8 +21,9 @@ import { NimbleError } from './errors.js';
 import { Router, type RoutedRequest } from './router.js';
 import { send } from './transport/http.js';
 import { readBedrockStream } from './transport/aws-event-stream.js';
+import { readAnthropicStream } from './transport/anthropic-stream.js';
 import { readJsonEventStream } from './transport/sse.js';
-import type { NimbleRequest, NimbleResponse, NimbleStreamEvent } from './types.js';
+import type { NimbleRequest, NimbleResponse, NimbleStreamEvent, ProviderId } from './types.js';
 import { deepFreeze } from './util/freeze.js';
 import { VERSION } from './version.js';
 
@@ -31,7 +32,7 @@ export interface ClientOptions {
   readonly config?: ConfigOverrides;
   /** Environment to read configuration from. Defaults to `process.env`. */
   readonly env?: Env;
-  /** Router to use. Defaults to one with the four built-in adapters. */
+  /** Router to use. Defaults to one with the built-in adapters. */
   readonly router?: Router;
   /** Injectable for tests; defaults to the global `fetch`. */
   readonly fetch?: typeof globalThis.fetch;
@@ -49,6 +50,21 @@ export interface CallOptions {
   readonly timeoutMs?: number;
   readonly maxRetries?: number;
 }
+
+/**
+ * Providers whose streamed bodies need more than plain SSE-to-JSON decoding:
+ * Bedrock frames its events as binary event-stream, and Anthropic splits one
+ * token count across two events. Everything else decodes chunk by chunk.
+ */
+const STREAM_READERS: Partial<
+  Record<
+    ProviderId,
+    (stream: ReadableStream<Uint8Array>) => AsyncGenerator<unknown, void, undefined>
+  >
+> = {
+  bedrock: readBedrockStream,
+  anthropic: readAnthropicStream,
+};
 
 export class NimbleClient {
   /** Resolved configuration. Secrets in it render as `[redacted]`. */
@@ -134,10 +150,7 @@ export class NimbleClient {
       });
     }
 
-    const chunks =
-      routed.provider === 'bedrock'
-        ? readBedrockStream(response.body)
-        : readJsonEventStream(response.body);
+    const chunks = (STREAM_READERS[routed.provider] ?? readJsonEventStream)(response.body);
 
     const parse = routed.adapter.parseStreamChunk?.bind(routed.adapter);
     /* c8 ignore next 6 -- every built-in adapter implements it */

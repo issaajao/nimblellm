@@ -14,7 +14,7 @@ import { createClient, normalizeRequest, Router, NimbleError, Secret } from 'nim
 interface ClientOptions {
   config?: ConfigOverrides; // overrides on top of the environment
   env?: Env; // where to read from; defaults to process.env
-  router?: Router; // defaults to the four built-in adapters
+  router?: Router; // defaults to the built-in adapters
   fetch?: typeof fetch; // injectable transport
   now?: () => number; // injectable clock (OAuth expiry)
   sleep?: (ms: number) => Promise<void>; // injectable backoff
@@ -123,9 +123,9 @@ interface NimbleRequest {
   messages: readonly NimbleMessage[]; // user | assistant | tool — never system
 
   maxOutputTokens?: number;
-  temperature?: number; // 0–2 canonical; 0–1 on Bedrock
+  temperature?: number; // 0–2 canonical; 0–1 on Bedrock and Anthropic
   topP?: number; // 0–1
-  topK?: number; // Vertex only
+  topK?: number; // Vertex and Anthropic only
   frequencyPenalty?: number; // -2–2
   presencePenalty?: number; // -2–2
   stop?: readonly string[];
@@ -197,8 +197,8 @@ class Secret {
 
 ## Credentials
 
-`CredentialRegistry`, `OpenAICredentials`, `AzureCredentials`,
-`BedrockCredentials`, `VertexCredentials`.
+`CredentialRegistry`, `OpenAICredentials`, `AnthropicCredentials`,
+`AzureCredentials`, `BedrockCredentials`, `VertexCredentials`.
 
 ```ts
 interface Credentials {
@@ -220,6 +220,8 @@ classification. `codeForStatus(status)`.
 
 `readEventStream(stream)`, `readJsonEventStream(stream)` — SSE.
 `EventStreamDecoder`, `readBedrockStream(stream)` — AWS binary frames.
+`readAnthropicStream(stream)` — Anthropic's event sequence, with usage stitched
+across events.
 
 ## Server
 

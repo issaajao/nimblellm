@@ -55,6 +55,12 @@ describe('messageFrom', () => {
     );
   });
 
+  it('reads the Anthropic envelope, which nests under a top-level error type', () => {
+    expect(
+      messageFrom('{"type":"error","error":{"type":"rate_limit_error","message":"slow down"}}'),
+    ).toBe('slow down');
+  });
+
   it('reads the Bedrock envelope, in either capitalization', () => {
     expect(messageFrom('{"message":"throttled"}')).toBe('throttled');
     expect(messageFrom('{"Message":"throttled"}')).toBe('throttled');

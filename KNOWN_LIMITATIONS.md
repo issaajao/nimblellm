@@ -4,7 +4,7 @@ Things that are true about NimbleLLM today and worth knowing before you rely on
 it. Kept honest and current — if something here stops being true, the fix is to
 edit this file, not to quietly leave it stale.
 
-Last reviewed: **2026-08-15** (v0.1.0, phase 6 of 6).
+Last reviewed: **2026-08-15** (v0.1.0, phase 6 of 6; Anthropic adapter added).
 
 One entry here has already earned its keep: §1 records a real signing defect that
 live verification caught and unit tests could not — found, fixed, and confirmed
@@ -25,6 +25,7 @@ is exactly one place to update when this changes.
 | Bedrock non-streaming round trip          | ✅ Yes — a real completion, correctly normalized ([§2](#2-live-coverage-by-provider-and-path))         |
 | Bedrock streaming / event-stream decoding | ❌ Not yet — has never decoded real AWS bytes ([§6](#6-streaming-caveats))                             |
 | OpenAI, Azure, Vertex — any path          | ❌ Not yet — no live call has been made ([§2](#2-live-coverage-by-provider-and-path))                  |
+| Anthropic — any path                      | ❌ Not yet — not checked against the real Anthropic API ([§2](#2-live-coverage-by-provider-and-path))  |
 | Container image                           | ✅ Yes — published, pulled anonymously, and smoke-tested from the registry ([§7](#7-operational-gaps)) |
 | Everything else                           | Tested against mocked transports and local stub servers                                                |
 
@@ -110,8 +111,9 @@ is **not** part of `npm test` and must not be added to CI.
 ## 2. Live coverage, by provider and path
 
 Only AWS Bedrock has been exercised against a live endpoint, and only on the
-non-streaming path. Everything else in the repository is tested against mocked
-transports and local stub servers.
+non-streaming path. Every other provider — OpenAI, Anthropic, Azure and Vertex —
+is tested against mocked transports and local stub servers alone, as is
+everything else in the repository.
 
 ### Verified: Bedrock, non-streaming, through the container
 
@@ -148,6 +150,26 @@ the same ground plus streaming, but the round trip above was performed with
   realistic payloads in the unit tests. What a live run would additionally catch
   is narrower — a wrong default API version, a model id that no longer exists, a
   response field that moved.
+
+- **Anthropic — any path.** The newest adapter, and the least exercised: it has
+  never contacted the real Anthropic API, on either the streaming or the
+  non-streaming path. It passes a unit suite against a mocked transport, which
+  the Bedrock episode above should be read as a warning about — SigV4 passed its
+  unit tests too, and was still wrong on the wire.
+
+  The specific things a live run would settle, none of which a mock can:
+  whether `x-api-key` plus `anthropic-version` is accepted as sent; whether the
+  request body is shaped as the API expects, including the defaulted
+  `max_tokens`; whether a real response parses into a `NimbleResponse`; and
+  whether the streamed event sequence decodes, including the usage figure
+  stitched together across `message_start` and `message_delta`.
+
+  Closing it takes one key and one command:
+
+  ```bash
+  export ANTHROPIC_API_KEY=sk-ant-...
+  npm run verify:live
+  ```
 
 ---
 
@@ -202,6 +224,11 @@ tenant is the supported multi-tenant story.
 - **Streamed responses are not retried.** Once the first byte is sent the status
   is already 200, so a mid-stream failure surfaces as a terminal `error` event
   rather than a retry. Non-streaming calls retry normally.
+- **Anthropic's stream has never been decoded live either.** Its framing is
+  ordinary SSE, so the decoding risk is lower than Bedrock's binary format, but
+  the event sequence is its own protocol and the usage figure is stitched
+  together across two events ([§2](#2-live-coverage-by-provider-and-path)). The
+  `stream` leg of `npm run verify:live` covers it.
 - **AWS event-stream CRCs are not verified.** The frame decoder reads the
   prelude and message CRC fields but does not check them. They guard against
   corruption on the wire, which TLS already covers.

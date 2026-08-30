@@ -7,7 +7,7 @@
  */
 
 /** Providers NimbleLLM knows how to route to. */
-export const PROVIDER_IDS = ['openai', 'azure', 'bedrock', 'vertex'] as const;
+export const PROVIDER_IDS = ['openai', 'azure', 'bedrock', 'vertex', 'anthropic'] as const;
 
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -31,8 +31,8 @@ export interface ModelRef {
  * Roles in a canonical conversation.
  *
  * Note that `system` is not listed: system instructions are hoisted out of the
- * message list into {@link NimbleRequest.system}, because three of the four
- * supported providers carry them in a dedicated top-level field.
+ * message list into {@link NimbleRequest.system}, because every provider but
+ * OpenAI carries them in a dedicated top-level field.
  */
 export type MessageRole = 'user' | 'assistant' | 'tool';
 

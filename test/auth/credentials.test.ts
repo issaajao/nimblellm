@@ -158,6 +158,33 @@ describe('BedrockCredentials', () => {
   });
 });
 
+describe('AnthropicCredentials', () => {
+  it('sends the key in x-api-key, not as a bearer token', async () => {
+    const credentials = registryFor({ ANTHROPIC_API_KEY: 'sk-ant-test' }).for('anthropic');
+    const headers = await credentials.authorize(context);
+
+    expect(headers['x-api-key']).toBe('sk-ant-test');
+    expect(headers['authorization']).toBeUndefined();
+  });
+
+  it('pins the api version, which the endpoint requires on every request', async () => {
+    const credentials = registryFor({ ANTHROPIC_API_KEY: 'sk-ant' }).for('anthropic');
+    expect(await credentials.authorize(context)).toMatchObject({
+      'anthropic-version': '2023-06-01',
+    });
+  });
+
+  it('exposes the base URL for the client to build on', () => {
+    expect(registryFor({ ANTHROPIC_API_KEY: 'sk-ant' }).for('anthropic').baseUrl).toBe(
+      'https://api.anthropic.com',
+    );
+  });
+
+  it('reports an unconfigured provider by naming the variable that would fix it', () => {
+    expect(() => registryFor({}).for('anthropic')).toThrowError(/ANTHROPIC_API_KEY/);
+  });
+});
+
 describe('VertexCredentials', () => {
   it('sends a pre-obtained access token as a bearer token', async () => {
     const credentials = registryFor({

@@ -272,7 +272,7 @@ export function normalizeResponseFormat(
 // Provider options
 // ---------------------------------------------------------------------------
 
-const PROVIDER_OPTION_KEYS = ['openai', 'azure', 'bedrock', 'vertex'] as const;
+const PROVIDER_OPTION_KEYS = ['openai', 'azure', 'bedrock', 'vertex', 'anthropic'] as const;
 
 /**
  * Provider-specific escape hatch, keyed by provider id. Contents are opaque

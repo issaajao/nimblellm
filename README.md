@@ -1,6 +1,6 @@
 # NimbleLLM
 
-**One request shape for OpenAI, AWS Bedrock, Azure OpenAI and Google Vertex AI.**
+**One request shape for OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and Google Vertex AI.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
@@ -53,16 +53,16 @@ normalizes requests and responses and gets out of the way.
 
 ## Documentation
 
-|                                                                                          |                                                                                                                                                           |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Quick start](./docs/quickstart.md)                                                      | Installed and calling a model                                                                                                                             |
-| [Configuration](./docs/configuration.md)                                                 | Every variable; how secrets are held                                                                                                                      |
-| [Provider setup](./docs/README.md#provider-setup)                                        | [OpenAI](./docs/providers/openai.md) · [Azure](./docs/providers/azure.md) · [Bedrock](./docs/providers/bedrock.md) · [Vertex](./docs/providers/vertex.md) |
-| [Streaming](./docs/streaming.md) · [Tools](./docs/tools.md) · [Errors](./docs/errors.md) | Guides                                                                                                                                                    |
-| [Gateway](./docs/gateway.md)                                                             | Running the container                                                                                                                                     |
-| [API reference](./docs/api-reference.md)                                                 | Types and exports                                                                                                                                         |
-| [Examples](./examples)                                                                   | Nine runnable programs, all executed by the test suite                                                                                                    |
-| [Known limitations](./KNOWN_LIMITATIONS.md)                                              | Deliberate limitations, and what has been checked against real providers                                                                                  |
+|                                                                                          |                                                                                                                                                                                                        |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Quick start](./docs/quickstart.md)                                                      | Installed and calling a model                                                                                                                                                                          |
+| [Configuration](./docs/configuration.md)                                                 | Every variable; how secrets are held                                                                                                                                                                   |
+| [Provider setup](./docs/README.md#provider-setup)                                        | [OpenAI](./docs/providers/openai.md) · [Anthropic](./docs/providers/anthropic.md) · [Azure](./docs/providers/azure.md) · [Bedrock](./docs/providers/bedrock.md) · [Vertex](./docs/providers/vertex.md) |
+| [Streaming](./docs/streaming.md) · [Tools](./docs/tools.md) · [Errors](./docs/errors.md) | Guides                                                                                                                                                                                                 |
+| [Gateway](./docs/gateway.md)                                                             | Running the container                                                                                                                                                                                  |
+| [API reference](./docs/api-reference.md)                                                 | Types and exports                                                                                                                                                                                      |
+| [Examples](./examples)                                                                   | Nine runnable programs, all executed by the test suite                                                                                                                                                 |
+| [Known limitations](./KNOWN_LIMITATIONS.md)                                              | Deliberate limitations, and what has been checked against real providers                                                                                                                               |
 
 ---
 
@@ -98,6 +98,7 @@ Point the same code at another provider by changing one string — and supplying
 that provider's credentials:
 
 ```ts
+model: 'anthropic/claude-sonnet-4-5-20250929';
 model: 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0';
 model: 'azure/my-gpt4o-deployment'; // the deployment name, not the model name
 model: 'vertex/gemini-2.0-flash';
@@ -449,12 +450,13 @@ payload; // { messages: [...], inferenceConfig: { maxTokens: 256 } }
 The same canonical request routed elsewhere produces a different body and a
 different path, with no change at the call site:
 
-| Model prefix | Path                                               | Body shape                          |
-| ------------ | -------------------------------------------------- | ----------------------------------- |
-| `openai/`    | `v1/chat/completions`                              | `{ model, messages, ... }`          |
-| `azure/`     | `openai/deployments/{deployment}/chat/completions` | same, minus `model`                 |
-| `bedrock/`   | `model/{modelId}/converse`                         | `{ messages, inferenceConfig, … }`  |
-| `vertex/`    | `publishers/google/models/{model}:generateContent` | `{ contents, generationConfig, … }` |
+| Model prefix | Path                                               | Body shape                           |
+| ------------ | -------------------------------------------------- | ------------------------------------ |
+| `openai/`    | `v1/chat/completions`                              | `{ model, messages, ... }`           |
+| `anthropic/` | `v1/messages`                                      | `{ model, messages, max_tokens, … }` |
+| `azure/`     | `openai/deployments/{deployment}/chat/completions` | same, minus `model`                  |
+| `bedrock/`   | `model/{modelId}/converse`                         | `{ messages, inferenceConfig, … }`   |
+| `vertex/`    | `publishers/google/models/{model}:generateContent` | `{ contents, generationConfig, … }`  |
 
 Responses come back through `adapter.parseResponse(raw, request)` as a
 `NimbleResponse`, and streamed chunks through `adapter.parseStreamChunk(chunk)`
@@ -479,22 +481,28 @@ router.route(
 //   issues: [{ path: 'seed', message: 'not supported by bedrock' }]
 ```
 
-|                    | OpenAI | Azure | Bedrock | Vertex |
-| ------------------ | :----: | :---: | :-----: | :----: |
-| streaming          |   ✅   |  ✅   |   ✅    |   ✅   |
-| tools              |   ✅   |  ✅   |   ✅    |   ✅   |
-| forced tool use    |   ✅   |  ✅   |   ✅    |   ✅   |
-| JSON mode          |   ✅   |  ✅   |   ❌    |   ✅   |
-| JSON schema output |   ✅   |  ✅   |   ❌    |   ✅   |
-| images by URL      |   ✅   |  ✅   |   ❌    |   ✅   |
-| inline images      |   ✅   |  ✅   |   ✅    |   ✅   |
-| `seed`             |   ✅   |  ✅   |   ❌    |   ✅   |
-| `stop`             |  ✅ 4  | ✅ 4  |   ✅    |  ✅ 5  |
-| frequency penalty  |   ✅   |  ✅   |   ❌    |   ✅   |
-| presence penalty   |   ✅   |  ✅   |   ❌    |   ✅   |
-| `topK`             |   ❌   |  ❌   |   ❌    |   ✅   |
-| `metadata`         |   ✅   |  ✅   |   ❌    |   ❌   |
-| temperature range  |  0–2   |  0–2  |   0–1   |  0–2   |
+|                    | OpenAI | Anthropic | Azure | Bedrock | Vertex |
+| ------------------ | :----: | :-------: | :---: | :-----: | :----: |
+| streaming          |   ✅   |    ✅     |  ✅   |   ✅    |   ✅   |
+| tools              |   ✅   |    ✅     |  ✅   |   ✅    |   ✅   |
+| forced tool use    |   ✅   |    ✅     |  ✅   |   ✅    |   ✅   |
+| JSON mode          |   ✅   |    ❌     |  ✅   |   ❌    |   ✅   |
+| JSON schema output |   ✅   |    ❌     |  ✅   |   ❌    |   ✅   |
+| images by URL      |   ✅   |    ✅     |  ✅   |   ❌    |   ✅   |
+| inline images      |   ✅   |    ✅     |  ✅   |   ✅    |   ✅   |
+| `seed`             |   ✅   |    ❌     |  ✅   |   ❌    |   ✅   |
+| `stop`             |  ✅ 4  |    ✅     | ✅ 4  |   ✅    |  ✅ 5  |
+| frequency penalty  |   ✅   |    ❌     |  ✅   |   ❌    |   ✅   |
+| presence penalty   |   ✅   |    ❌     |  ✅   |   ❌    |   ✅   |
+| `topK`             |   ❌   |    ✅     |  ❌   |   ❌    |   ✅   |
+| `metadata`         |   ✅   |   ✅ ¹    |  ✅   |   ❌    |   ❌   |
+| temperature range  |  0–2   |    0–1    |  0–2  |   0–1   |  0–2   |
+
+¹ Anthropic's `metadata` accepts `user_id` and nothing else; any other key is
+rejected with `invalid_request` rather than dropped. Anthropic is also the one
+provider with a **required** parameter the canonical shape leaves optional —
+`max_tokens` — so the adapter fills in a documented default. Both are covered in
+[its setup page](./docs/providers/anthropic.md).
 
 Anything a provider offers but NimbleLLM does not model — Bedrock guardrails,
 Vertex labels, per-model `topK` on Bedrock — stays reachable through
@@ -555,8 +563,9 @@ src/
     google.ts         Service-account JWT → cached OAuth token
   transport/
     http.ts           fetch, deadlines, retries, error classification
-    sse.ts            Server-sent events (OpenAI, Azure, Vertex)
+    sse.ts            Server-sent events (OpenAI, Azure, Vertex, Anthropic)
     aws-event-stream.ts  Bedrock's binary frame format
+    anthropic-stream.ts  Anthropic's event sequence, with usage stitched
   providers/
     adapter.ts        The ProviderAdapter contract
     capabilities.ts   Capability derivation and range enforcement
@@ -565,6 +574,7 @@ src/
     azure.ts          Azure OpenAI (deployment in the URL)
     bedrock.ts        AWS Bedrock Converse
     vertex.ts         Google Vertex Gemini generateContent
+    anthropic.ts      Anthropic Messages
     shared.ts         Helpers used by more than one adapter
   util/
     freeze.ts         Deep freeze for normalized requests

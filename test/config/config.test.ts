@@ -203,6 +203,32 @@ describe('loadConfig', () => {
     });
   });
 
+  describe('anthropic', () => {
+    it('loads a key and defaults the base URL and version', () => {
+      const config = loadConfig({ ANTHROPIC_API_KEY: 'sk-ant-test' });
+      expect(config.anthropic?.apiKey.reveal()).toBe('sk-ant-test');
+      expect(config.anthropic?.baseUrl).toBe('https://api.anthropic.com');
+      expect(config.anthropic?.version).toBe('2023-06-01');
+    });
+
+    it('accepts an overridden base URL and strips the trailing slash', () => {
+      const config = loadConfig({
+        ANTHROPIC_API_KEY: 'sk-ant',
+        ANTHROPIC_BASE_URL: 'https://proxy.test/',
+      });
+      expect(config.anthropic?.baseUrl).toBe('https://proxy.test');
+    });
+
+    it('lets the api version be pinned elsewhere', () => {
+      const config = loadConfig({ ANTHROPIC_API_KEY: 'sk-ant', ANTHROPIC_VERSION: '2024-01-01' });
+      expect(config.anthropic?.version).toBe('2024-01-01');
+    });
+
+    it('is absent without a key, whatever else is set', () => {
+      expect(loadConfig({ ANTHROPIC_BASE_URL: 'https://proxy.test' }).anthropic).toBeUndefined();
+    });
+  });
+
   describe('client-wide settings', () => {
     it('reads the default provider', () => {
       expect(loadConfig({ NIMBLE_DEFAULT_PROVIDER: 'bedrock' }).defaultProvider).toBe('bedrock');

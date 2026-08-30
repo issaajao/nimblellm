@@ -38,9 +38,9 @@ describe('parseModelRef', () => {
   });
 
   it('treats an unrecognized prefix as part of the model name', () => {
-    const ref = parseModelRef('anthropic/claude-sonnet-4', { defaultProvider: 'bedrock' });
+    const ref = parseModelRef('cohere/command-r-plus', { defaultProvider: 'bedrock' });
     expect(ref.provider).toBe('bedrock');
-    expect(ref.model).toBe('anthropic/claude-sonnet-4');
+    expect(ref.model).toBe('cohere/command-r-plus');
   });
 
   it('rejects an unprefixed reference when no default is configured', () => {

@@ -21,6 +21,7 @@ const ENV = {
     GOOGLE_CLOUD_PROJECT: 'my-project',
     VERTEX_LOCATION: 'us-central1',
   },
+  anthropic: { ANTHROPIC_API_KEY: 'sk-ant-test' },
 } as const;
 
 const OPENAI_RESPONSE = {
@@ -191,6 +192,64 @@ describe('NimbleClient', () => {
       expect(response.message.content).toEqual([{ type: 'text', text: 'Rayleigh.' }]);
     });
 
+    it('authenticates Anthropic with x-api-key and a pinned version header', async () => {
+      const fetchImpl = jsonResponder({
+        id: 'msg_1',
+        model: 'claude-sonnet-4-5-20250929',
+        content: [{ type: 'text', text: 'Rayleigh scattering.' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 10, output_tokens: 4 },
+      });
+
+      const response = await client(ENV.anthropic, fetchImpl).complete({
+        model: 'anthropic/claude-sonnet-4-5-20250929',
+        messages,
+      });
+
+      const call = callOf(fetchImpl);
+      expect(call.url.toString()).toBe('https://api.anthropic.com/v1/messages');
+      // Not a bearer token, which is what makes this provider's auth distinct.
+      expect(call.headers['x-api-key']).toBe('sk-ant-test');
+      expect(call.headers['authorization']).toBeUndefined();
+      expect(call.headers['anthropic-version']).toBe('2023-06-01');
+      // Required by the API and absent from the request, so the adapter fills it in.
+      expect(call.body).toMatchObject({ model: 'claude-sonnet-4-5-20250929', max_tokens: 4096 });
+
+      expect(response).toMatchObject({
+        provider: 'anthropic',
+        finishReason: 'stop',
+        usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14 },
+      });
+    });
+
+    it.each([
+      [401, 'authentication_error', false],
+      [429, 'rate_limited', true],
+      // Anthropic's own code for "overloaded", which is a 5xx and so retryable.
+      [529, 'provider_error', true],
+    ])(
+      'classifies an Anthropic %i into the canonical taxonomy',
+      async (status, code, retryable) => {
+        const fetchImpl = jsonResponder(
+          { type: 'error', error: { type: 'x', message: 'upstream said no' } },
+          status,
+        );
+
+        await expect(
+          client(ENV.anthropic, fetchImpl).complete({
+            model: 'anthropic/claude-sonnet-4-5-20250929',
+            messages,
+          }),
+        ).rejects.toThrowError(
+          expect.objectContaining({
+            code,
+            retryable,
+            message: expect.stringContaining('upstream said no'),
+          }),
+        );
+      },
+    );
+
     it('keeps the injected project and location out of the request body', async () => {
       const fetchImpl = jsonResponder({
         candidates: [{ content: { parts: [{ text: 'x' }] }, finishReason: 'STOP' }],
@@ -324,6 +383,40 @@ describe('NimbleClient', () => {
         { type: 'text_delta', text: 'leigh' },
         { type: 'finish', finishReason: 'stop' },
         { type: 'usage', usage: { inputTokens: 8, outputTokens: 2, totalTokens: 10 } },
+      ]);
+    });
+
+    it('stitches Anthropic usage together across message_start and message_delta', async () => {
+      // Input tokens are reported once, at the start; output tokens only at the
+      // end. Neither event alone can produce a complete usage figure.
+      const fetchImpl = sseResponder(
+        {
+          type: 'message_start',
+          message: { id: 'msg_1', usage: { input_tokens: 8, output_tokens: 1 } },
+        },
+        { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+        { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'Ray' } },
+        { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'leigh' } },
+        { type: 'content_block_stop', index: 0 },
+        { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 2 } },
+        { type: 'message_stop' },
+      );
+
+      const events = [];
+      for await (const event of client(ENV.anthropic, fetchImpl).stream({
+        model: 'anthropic/claude-sonnet-4-5-20250929',
+        messages,
+      })) {
+        events.push(event);
+      }
+
+      expect(callOf(fetchImpl).body).toMatchObject({ stream: true });
+      expect(callOf(fetchImpl).headers['accept']).toBe('text/event-stream');
+      expect(events).toEqual([
+        { type: 'text_delta', text: 'Ray' },
+        { type: 'text_delta', text: 'leigh' },
+        { type: 'usage', usage: { inputTokens: 8, outputTokens: 2, totalTokens: 10 } },
+        { type: 'finish', finishReason: 'stop' },
       ]);
     });
 

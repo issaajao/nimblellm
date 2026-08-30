@@ -1,6 +1,6 @@
 # NimbleLLM documentation
 
-One request shape for OpenAI, AWS Bedrock, Azure OpenAI and Google Vertex AI.
+One request shape for OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and Google Vertex AI.
 
 ## Start here
 
@@ -14,6 +14,7 @@ Each page covers getting credentials, the model reference format, what that
 provider supports, and the mistakes that cost the most time.
 
 - [OpenAI](./providers/openai.md)
+- [Anthropic](./providers/anthropic.md)
 - [Azure OpenAI](./providers/azure.md)
 - [AWS Bedrock](./providers/bedrock.md)
 - [Google Vertex AI](./providers/vertex.md)

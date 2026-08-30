@@ -1,7 +1,7 @@
 {
   "name": "nimblellm",
   "version": "0.1.0",
-  "description": "One request shape for OpenAI, AWS Bedrock, Azure OpenAI and Google Vertex AI.",
+  "description": "One request shape for OpenAI, Anthropic, AWS Bedrock, Azure OpenAI and Google Vertex AI.",
   "license": "MIT",
   "author": "NimbleLLM contributors",
   "repository": {

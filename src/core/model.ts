@@ -26,6 +26,8 @@ const PROVIDER_ALIASES: Readonly<Record<string, ProviderId>> = {
   google: 'vertex',
   googlevertex: 'vertex',
   gcp: 'vertex',
+  anthropic: 'anthropic',
+  claude: 'anthropic',
 };
 
 export function isProviderId(value: string): value is ProviderId {

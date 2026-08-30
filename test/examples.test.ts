@@ -72,6 +72,43 @@ function stubProvider(): Server {
           : reply({ candidates: [candidate], usageMetadata, modelVersion: 'gemini-2.0-flash-001' });
       }
 
+      // --- Anthropic ------------------------------------------------------
+      if (path.includes('/v1/messages')) {
+        const usage = { input_tokens: 5, output_tokens: 2 };
+        // The Messages API streams a typed event sequence rather than repeated
+        // snapshots, so the streaming reply is built event by event.
+        return streaming
+          ? sse(
+              { type: 'message_start', message: { id: 'msg_1', usage } },
+              {
+                type: 'content_block_delta',
+                index: 0,
+                delta: { type: 'text_delta', text: 'one ' },
+              },
+              {
+                type: 'content_block_delta',
+                index: 0,
+                delta: { type: 'text_delta', text: 'two ' },
+              },
+              {
+                type: 'content_block_delta',
+                index: 0,
+                delta: { type: 'text_delta', text: 'three' },
+              },
+              { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage },
+              { type: 'message_stop' },
+            )
+          : reply({
+              id: 'msg_1',
+              type: 'message',
+              role: 'assistant',
+              model: 'claude-haiku-4-5-20251001',
+              content: [{ type: 'text', text: 'Pacific' }],
+              stop_reason: 'end_turn',
+              usage,
+            });
+      }
+
       // --- Bedrock --------------------------------------------------------
       if (path.includes('/converse')) {
         // The binary event-stream format is covered by its own unit tests; the
@@ -189,6 +226,8 @@ function stubEnv(): Record<string, string> {
     GOOGLE_ACCESS_TOKEN: 'ya29.stub',
     GOOGLE_CLOUD_PROJECT: 'stub-project',
     VERTEX_BASE_URL: providerUrl,
+    ANTHROPIC_API_KEY: 'sk-ant-stub',
+    ANTHROPIC_BASE_URL: providerUrl,
   };
 }
 
@@ -234,7 +273,7 @@ describe.skipIf(!stripsTypes)('examples', () => {
       AZURE_DEPLOYMENT: 'my-deployment',
     });
     expect(code).toBe(0);
-    for (const provider of ['openai', 'azure', 'bedrock', 'vertex']) {
+    for (const provider of ['openai', 'azure', 'bedrock', 'vertex', 'anthropic']) {
       expect(stdout).toContain(provider);
     }
     expect(stdout).not.toContain('failed:');

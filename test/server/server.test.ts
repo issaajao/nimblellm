@@ -328,6 +328,7 @@ describe('gateway server', () => {
         'azure',
         'bedrock',
         'vertex',
+        'anthropic',
       ]);
 
       const openai = payload.providers.find((entry) => entry.id === 'openai');

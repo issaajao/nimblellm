@@ -26,7 +26,7 @@ const tools: NimbleTool[] = [
 
 `parameters` is JSON Schema and must be `type: 'object'`. Names are limited to
 1–64 characters of letters, digits, underscores and hyphens — the intersection
-of what the four providers accept. Duplicate names are rejected.
+of what every provider accepts. Duplicate names are rejected.
 
 ### The round trip
 
@@ -154,7 +154,7 @@ NimbleError: bedrock does not support: json_schema
 ## Structured output on Bedrock
 
 Use a tool as the schema. The model is constrained the same way, and this
-pattern works on all four providers:
+pattern works on every provider:
 
 ```ts
 const tools: NimbleTool[] = [

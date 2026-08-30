@@ -64,11 +64,23 @@ export interface VertexConfig {
   readonly serviceAccount?: VertexServiceAccount;
 }
 
+export interface AnthropicConfig {
+  readonly apiKey: Secret;
+  /** Override for a proxy or a compatible gateway. */
+  readonly baseUrl: string;
+  /**
+   * The `anthropic-version` header sent on every request. Pinned rather than
+   * tracking latest, because the version is what makes response shapes stable.
+   */
+  readonly version: string;
+}
+
 export interface NimbleConfig {
   readonly openai?: OpenAIConfig;
   readonly azure?: AzureConfig;
   readonly bedrock?: BedrockConfig;
   readonly vertex?: VertexConfig;
+  readonly anthropic?: AnthropicConfig;
 
   /** Provider assumed for model references with no `provider/` prefix. */
   readonly defaultProvider?: ProviderId;
@@ -88,6 +100,9 @@ export const DEFAULT_TIMEOUT_MS = 120_000;
 export const DEFAULT_MAX_RETRIES = 2;
 export const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com';
 export const DEFAULT_VERTEX_LOCATION = 'us-central1';
+export const DEFAULT_ANTHROPIC_BASE_URL = 'https://api.anthropic.com';
+/** The only `anthropic-version` this adapter's mappings have been written against. */
+export const DEFAULT_ANTHROPIC_VERSION = '2023-06-01';
 /** Matches the default pinned by the Azure adapter in `describeRoute`. */
 export const DEFAULT_AZURE_API_VERSION = '2024-10-21';
 
@@ -125,6 +140,7 @@ export function loadConfig(env: Env = process.env): NimbleConfig {
   const azure = loadAzure(env);
   const bedrock = loadBedrock(env);
   const vertex = loadVertex(env);
+  const anthropic = loadAnthropic(env);
   const defaultProvider = readProvider(env['NIMBLE_DEFAULT_PROVIDER']);
 
   return {
@@ -132,6 +148,7 @@ export function loadConfig(env: Env = process.env): NimbleConfig {
     ...(azure === undefined ? {} : { azure }),
     ...(bedrock === undefined ? {} : { bedrock }),
     ...(vertex === undefined ? {} : { vertex }),
+    ...(anthropic === undefined ? {} : { anthropic }),
     ...(defaultProvider === undefined ? {} : { defaultProvider }),
     timeoutMs: readPositiveInt(env['NIMBLE_TIMEOUT_MS'], 'NIMBLE_TIMEOUT_MS') ?? DEFAULT_TIMEOUT_MS,
     maxRetries:
@@ -170,6 +187,7 @@ export function secretsIn(config: NimbleConfig): readonly Secret[] {
     config.bedrock?.sessionToken,
     config.vertex?.accessToken,
     config.vertex?.serviceAccount?.privateKey,
+    config.anthropic?.apiKey,
   ];
   return secrets.filter((secret): secret is Secret => secret !== undefined);
 }
@@ -276,6 +294,17 @@ function loadVertex(env: Env): VertexConfig | undefined {
             privateKey: serviceAccount.privateKey,
           },
         }),
+  };
+}
+
+function loadAnthropic(env: Env): AnthropicConfig | undefined {
+  const apiKey = Secret.from(env['ANTHROPIC_API_KEY'], 'ANTHROPIC_API_KEY');
+  if (apiKey === undefined) return undefined;
+
+  return {
+    apiKey,
+    baseUrl: trimSlash(readString(env['ANTHROPIC_BASE_URL']) ?? DEFAULT_ANTHROPIC_BASE_URL),
+    version: readString(env['ANTHROPIC_VERSION']) ?? DEFAULT_ANTHROPIC_VERSION,
   };
 }
 

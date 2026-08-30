@@ -1,9 +1,9 @@
 # Streaming
 
 `client.stream()` returns an async iterable of canonical events. The providers
-frame streams very differently — OpenAI, Azure and Vertex use server-sent
-events, Bedrock uses a binary format of its own — and all of it arrives here as
-the same four event types.
+frame streams very differently — most use server-sent events, Anthropic sends a
+typed event sequence over them, and Bedrock uses a binary format of its own —
+and all of it arrives here as the same four event types.
 
 ```ts
 for await (const event of client.stream({ model, messages })) {
@@ -26,7 +26,8 @@ type NimbleStreamEvent =
 
 **`usage` is separate from `finish`** because providers report token counts on
 their own schedule: OpenAI in a trailing chunk _after_ the finish reason,
-Bedrock in a `metadata` frame, Vertex on every chunk. Take whichever arrives:
+Bedrock in a `metadata` frame, Vertex on every chunk, Anthropic split across two
+events and reassembled. Take whichever arrives:
 
 ```ts
 let usage: TokenUsage | undefined;
@@ -109,13 +110,14 @@ Client code: [example 09](../examples/09-gateway-client.ts).
 
 ## Per-provider notes
 
-| Provider | Transport           | Notes                                                           |
-| -------- | ------------------- | --------------------------------------------------------------- |
-| OpenAI   | SSE                 | `stream_options.include_usage` is set, or usage is never sent   |
-| Azure    | SSE                 | Same as OpenAI                                                  |
-| Bedrock  | binary event stream | `converse-stream`; frames decoded internally, CRCs not verified |
-| Vertex   | SSE                 | `?alt=sse` is added, or the endpoint returns a JSON array       |
+| Provider  | Transport           | Notes                                                                                                       |
+| --------- | ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| OpenAI    | SSE                 | `stream_options.include_usage` is set, or usage is never sent                                               |
+| Azure     | SSE                 | Same as OpenAI                                                                                              |
+| Bedrock   | binary event stream | `converse-stream`; frames decoded internally, CRCs not verified                                             |
+| Vertex    | SSE                 | `?alt=sse` is added, or the endpoint returns a JSON array                                                   |
+| Anthropic | SSE                 | A typed event sequence; input and output tokens are reported in different events and stitched back together |
 
 For what has and has not been checked against a real provider — Bedrock's frame
-decoder in particular — see
+decoder and Anthropic's event sequence in particular — see
 [Known limitations](../KNOWN_LIMITATIONS.md#verification-status).
