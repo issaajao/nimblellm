@@ -3,11 +3,11 @@
 Uses the [Messages API](https://docs.anthropic.com/en/api/messages) directly,
 rather than through a compatibility shim.
 
-> **Nothing on this page has been checked against the live Anthropic API.** The
-> adapter is written to the published specification and covered by unit tests
-> against a mocked transport, which is not the same as working. See
-> [Known limitations](../../KNOWN_LIMITATIONS.md#verification-status) for what
-> that means and how to close it.
+> **Checked against the live API on 30 August 2026** — a real completion and a
+> real stream, both through `npm run verify:live`. Tool calls and images were
+> not part of that check and remain unit-tested only. See
+> [Known limitations](../../KNOWN_LIMITATIONS.md#verification-status) for the
+> current status.
 
 ## Setup
 
@@ -269,10 +269,10 @@ automatically, honouring `retry-after`.
 
 **`invalid_request` for `temperature`** — the ceiling is 1, not 2.
 
-## Verifying it for real
+## Re-verifying it
 
-Everything above is written from the specification. To check it against the
-actual API:
+The text and streaming paths have been checked against the real API; tool calls
+and images have not. To re-check at any time:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -280,7 +280,7 @@ npm run verify:live
 ```
 
 That makes two real, billable calls — one non-streaming, one streaming — and
-prints what came back. Use a key from a non-production workspace. If it passes,
-record the result in
+prints what came back. Use a key from a non-production workspace. Record what
+you find in
 [Known limitations](../../KNOWN_LIMITATIONS.md#verification-status), which is
 where the rest of the repository reads verification status from.
