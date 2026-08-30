@@ -48,18 +48,22 @@
     "docker:run": "docker run --rm -p 8080:8080 --env-file .env nimblellm:local",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepublishOnly": "npm run clean && npm run build",
+    "prepublishOnly": "npm run clean && npm run ci",
     "ci": "npm run format:check && npm run typecheck && npm run build && npm run test:coverage"
   },
   "keywords": [
     "llm",
     "openai",
+    "anthropic",
+    "claude",
     "bedrock",
     "azure-openai",
     "vertex-ai",
     "gateway",
     "proxy",
-    "normalization"
+    "normalization",
+    "portability",
+    "cli"
   ],
   "dependencies": {
     "zod": "^4.0.0"

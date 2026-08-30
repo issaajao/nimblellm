@@ -51,6 +51,38 @@ Not mechanically enforced, but worth doing:
   attestation to `ghcr.io/issaajao/nimblellm`. A published GitHub release
   triggers the same workflow automatically.
 
+## npm credentials
+
+The Release workflow publishes with provenance, which needs two things that do
+not exist by default and are not created by this repository:
+
+- **A `release` environment** on the repository (Settings → Environments). The
+  workflow declares `environment: release`; without it the run fails before it
+  does anything.
+- **`NPM_TOKEN`** as a secret on that environment — an npm **automation** token,
+  which is the token type that works with 2FA enabled on the account.
+
+Publishing this way is worth the setup: `npm publish --provenance` produces a
+signed link between the tarball and the commit and workflow that built it, the
+same guarantee the container image carries. It cannot be produced by a
+hand-run publish, which has no OIDC identity to sign with.
+
+**Publishing by hand** is the alternative and needs no repository setup:
+
+```bash
+npm login          # 2FA prompt
+npm publish        # runs prepublishOnly: clean, format, types, build, tests
+```
+
+That path forgoes provenance and the workflow's "is this version already
+published?" guard. Check the version yourself first:
+
+```bash
+npm view nimblellm@$(node -p "require('./package.json').version") version
+```
+
+A 404 there means the version is free.
+
 ## Versioning
 
 Pre-1.0, so minor versions may break. Error `code` values are the most stable
