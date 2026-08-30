@@ -25,6 +25,7 @@ provider supports, and the mistakes that cost the most time.
 - [Tools and structured output](./tools.md)
 - [Errors and retries](./errors.md)
 - [Running as a gateway](./gateway.md)
+- [Command line](./cli.md) — `nimblellm check`, offline portability analysis
 
 ## Reference
 

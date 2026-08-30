@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 /**
- * Container entrypoint.
+ * The `nimblellm` binary.
  *
- * Reads configuration from the environment, starts the gateway, and shuts down
- * cleanly on SIGTERM — which is what an orchestrator sends first, and what
- * decides whether in-flight completions finish or are cut off mid-token.
+ * Two modes. With no arguments it is the container entrypoint: read
+ * configuration from the environment, start the gateway, and shut down cleanly
+ * on SIGTERM — which is what an orchestrator sends first, and what decides
+ * whether in-flight completions finish or are cut off mid-token.
+ *
+ * With `check` it is an offline capability report and never opens a socket.
+ * The gateway stays the no-argument default so that `CMD ["node",
+ * "dist/bin/nimblellm.js"]` keeps meaning what it has always meant.
  */
 
+import { runCheck } from '../cli/check.js';
 import { createClient } from '../client.js';
 import { configuredProviders } from '../config/config.js';
 import { NimbleError } from '../errors.js';
@@ -15,6 +21,22 @@ import { startServer } from '../server/server.js';
 import { VERSION } from '../version.js';
 
 async function main(): Promise<void> {
+  const [mode, ...rest] = process.argv.slice(2);
+
+  if (mode === 'check') {
+    const { stdout, stderr, exitCode } = runCheck(rest);
+    if (stdout !== '') process.stdout.write(stdout);
+    if (stderr !== '') process.stderr.write(stderr);
+    process.exit(exitCode);
+  }
+
+  if (mode !== undefined) {
+    process.stderr.write(
+      `unknown command "${mode}". Run \`nimblellm check --help\`, or pass no arguments to start the gateway.\n`,
+    );
+    process.exit(1);
+  }
+
   const serverConfig = loadServerConfig();
   const client = createClient();
   const providers = configuredProviders(client.config);

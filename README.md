@@ -518,6 +518,47 @@ router.supports('vertex', 'top_k'); // true
 `candidatesFor` returns the registered providers that could serve a request as
 written, which is the building block for fallback chains.
 
+### `nimblellm check` — the same answer from the terminal
+
+That analysis is also a command, so you can ask it of a request without wiring
+anything up. No credentials, no network call, no client:
+
+```bash
+npx nimblellm check request.json
+```
+
+```
+nimblellm check · support-bot.json
+
+                      openai  azure  bedrock  vertex  anthropic
+  streaming             ✓       ✓       ✓       ✓         ✓
+  tools                 ✓       ✓       ✓       ✓         ✓
+  JSON schema output    ✓       ✓       ✗       ✓         ✗
+  seed                  ✓       ✓       ✗       ✓         ✗
+  temperature (0.7)     ✓       ✓       ✓       ✓         ✓
+
+  Portable across: 3/5 providers (openai, azure, vertex)
+
+  Blocked on bedrock    JSON schema output, seed
+  Blocked on anthropic  JSON schema output, seed
+
+  Your request names openai, which can serve it.
+```
+
+Or without a file, for a quick question:
+
+```bash
+npx nimblellm check --model claude-sonnet --tools --json-schema
+```
+
+It exits `0` when some provider can serve the request, `1` on a validation
+failure — reported with the library's own error, not a CLI rewording — and `2`
+when nothing can serve it, which makes it usable as a CI guard.
+
+Every cell comes from `router.supports()` and `assertWithinLimits()`, the same
+functions the router calls on the real path, so the report cannot drift out of
+step with routing. Full flag list and exit codes in [the CLI docs](./docs/cli.md).
+
 ### Adding a provider
 
 Adapters are registered, not hard-coded. Implement `ProviderAdapter` and hand
@@ -548,7 +589,9 @@ src/
   client.ts           createClient() — the only file that touches the network
   router.ts           Adapter registry, capability checks, call construction
   bin/
-    nimblellm.ts      Container entrypoint; graceful shutdown
+    nimblellm.ts      Binary entrypoint: gateway, or `check`
+  cli/
+    check.ts          `nimblellm check` — offline capability report
   scripts/
     verify-live.ts    Manual live-provider check (never run by CI)
   server/
