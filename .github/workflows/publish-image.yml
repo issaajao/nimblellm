@@ -84,7 +84,7 @@ jobs:
 
       - name: Attest provenance
         if: ${{ github.event_name == 'release' || inputs.dry_run == false }}
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.push.outputs.digest }}
