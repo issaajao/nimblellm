@@ -4,7 +4,7 @@ Things that are true about NimbleLLM today and worth knowing before you rely on
 it. Kept honest and current — if something here stops being true, the fix is to
 edit this file, not to quietly leave it stale.
 
-Last reviewed: **2026-08-30** (v0.1.0, phase 6 of 6; Anthropic adapter added and verified).
+Last reviewed: **2026-09-21** (v0.2.0, phase 6 of 6; Anthropic adapter added and verified).
 
 One entry here has already earned its keep: §1 records a real signing defect that
 live verification caught and unit tests could not — found, fixed, and confirmed
